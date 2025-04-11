@@ -1,0 +1,168 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>약물 주입속도 계산기</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f4f4f4;
+    }
+    h2 {
+      color: #333;
+    }
+    .btn-group button, .dose-group button, .conc-group button {
+      margin: 5px 5px 0 0;
+      padding: 10px 15px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      cursor: pointer;
+    }
+    .drug-btn {
+      background-color: #007BFF;
+    }
+    .dose-btn {
+      background-color: #28a745;
+    }
+    .conc-btn {
+      background-color: #6c757d;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      font-size: 16px;
+    }
+    .result {
+      margin-top: 20px;
+      font-size: 18px;
+      padding: 10px;
+      background: white;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      text-align: center;
+    }
+    .result .dose {
+      font-size: 18px;
+      color: #333;
+    }
+    .result .rate {
+      font-size: 28px;
+      font-weight: bold;
+      color: #d9534f;
+      margin-top: 10px;
+    }
+    .label-info {
+      font-weight: bold;
+      margin: 10px 0 5px;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <h2>약물 주입속도 계산기</h2>
+
+  <div class="btn-group">
+    <button class="drug-btn" onclick="selectDrug('Norepi')">Norepi</button>
+    <button class="drug-btn" onclick="selectDrug('Phenyl')">Phenyl</button>
+    <button class="drug-btn" onclick="selectDrug('Dopa/Dobu')">Dopa/Dobu</button>
+  </div>
+
+  <label class="label-info">선택한 약물:</label>
+  <input type="text" id="drug" readonly />
+
+  <div class="conc-group" id="norepi-conc" style="display:none;">
+    <label class="label-info">농도 (mcg/mL):</label><br />
+    <button class="conc-btn" onclick="setNorepiConc(5)">5 mcg/mL</button>
+    <button class="conc-btn" onclick="setNorepiConc(10)">10 mcg/mL</button>
+  </div>
+
+  <div class="conc-group" id="confirm-conc" style="margin-top: 10px;"></div>
+
+  <label class="label-info">체중 (kg):</label>
+  <input type="number" id="weight" placeholder="예: 70" />
+
+  <div class="dose-group" id="dose-buttons"></div>
+
+  <div class="result" id="result">결과가 여기에 표시됩니다.</div>
+
+  <script>
+    let selectedDrug = "";
+    let concentration = 0;
+
+    function selectDrug(name) {
+      selectedDrug = name;
+      document.getElementById("drug").value = name;
+      document.getElementById("result").innerHTML = "결과가 여기에 표시됩니다.";
+
+      const confirmDiv = document.getElementById("confirm-conc");
+      confirmDiv.innerHTML = "";
+
+      if (name === "Norepi") {
+        concentration = 10;
+        document.getElementById("norepi-conc").style.display = "block";
+        confirmDiv.innerHTML = "<b>현재 농도:</b> 10 mcg/mL";
+      } else {
+        document.getElementById("norepi-conc").style.display = "none";
+        if (name === "Phenyl") {
+          concentration = 100;
+          confirmDiv.innerHTML = "<b>현재 농도:</b> 100 mcg/mL";
+        } else if (name === "Dopa/Dobu") {
+          concentration = 2000;
+          confirmDiv.innerHTML = "<b>현재 농도:</b> 2 mg/mL (2000 mcg/mL)";
+        }
+      }
+
+      renderDoseButtons(name);
+    }
+
+    function setNorepiConc(value) {
+      concentration = value;
+      document.getElementById("confirm-conc").innerHTML = `<b>현재 농도:</b> ${value} mcg/mL`;
+    }
+
+    function renderDoseButtons(drug) {
+      const container = document.getElementById("dose-buttons");
+      container.innerHTML = "";
+      let doses = [];
+
+      if (drug === "Norepi") {
+        for (let i = 1; i <= 10; i++) doses.push((i * 0.01).toFixed(2));
+      } else if (drug === "Phenyl") {
+        for (let i = 1; i <= 10; i++) doses.push((i * 0.1).toFixed(1));
+      } else if (drug === "Dopa/Dobu") {
+        doses = [1, 2, 3, 4, 5, 10];
+      }
+
+      doses.forEach(dose => {
+        const btn = document.createElement("button");
+        btn.className = "dose-btn";
+        btn.textContent = dose;
+        btn.onclick = () => calculate(parseFloat(dose));
+        container.appendChild(btn);
+      });
+    }
+
+    function calculate(dose) {
+      const weight = parseFloat(document.getElementById("weight").value);
+      if (!selectedDrug || isNaN(weight) || concentration === 0) {
+        document.getElementById("result").innerText = "약물, 체중, 농도를 확인해주세요.";
+        return;
+      }
+
+      const mcgPerMin = weight * dose;
+      const mcgPerHr = mcgPerMin * 60;
+      const mLPerHr = mcgPerHr / concentration;
+
+      document.getElementById("result").innerHTML =
+        `<div class="dose">${selectedDrug} ${dose} mcg/kg/min @ ${concentration} mcg/mL</div>
+         <div class="rate">${mLPerHr.toFixed(2)} mL/hr</div>`;
+    }
+  </script>
+</body>
+</html>
