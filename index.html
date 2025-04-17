@@ -1,0 +1,119 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>약물 주입속도 계산기</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f9f9f9;
+    }
+    h1 {
+      font-size: 20px;
+      text-align: center;
+    }
+    .drug-buttons,
+    .concentration-buttons,
+    .dose-buttons {
+      display: grid;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .drug-buttons {
+      grid-template-columns: repeat(2, 1fr);
+      margin-bottom: 10px;
+    }
+    .concentration-buttons.grid-3 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .concentration-buttons.grid-2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .dose-buttons.grid-2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .dose-buttons.grid-5 {
+      grid-template-columns: repeat(5, 1fr);
+    }
+    button {
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 14px;
+      text-align: center;
+    }
+    .drug-buttons button {
+      background: #cce5ff;
+      color: black;
+    }
+    .drug-buttons button.active {
+      background: #007bff;
+      color: yellow;
+    }
+    .concentration-buttons button {
+      background: #ccc;
+      color: black;
+    }
+    .concentration-buttons button.active {
+      background: #444;
+      color: yellow;
+    }
+    .dose-buttons button {
+      background: #b2f2bb;
+      color: black;
+    }
+    .dose-buttons button.active {
+      background: #2f9e44;
+      color: yellow;
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 20px;
+      color: red;
+      text-align: center;
+    }
+    input[type="number"] {
+      width: 100%;
+      padding: 8px;
+      font-size: 16px;
+      margin-top: 10px;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>약물 주입속도 계산기</h1>
+
+  <div class="drug-buttons">
+    <button>Norepi</button>
+    <button>Phenyl</button>
+    <button>Dopa/Dobu</button>
+    <button>NTG</button>
+    <button>Byfavo</button>
+  </div>
+
+  <div id="selected-drug">선택한 약물:</div>
+
+  <div class="concentration-buttons grid-3">
+    <button>1mg/ml</button>
+    <button class="active">2mg/ml</button>
+    <button>4mg/ml</button>
+  </div>
+
+  <label>체중 (kg):</label>
+  <input type="number" placeholder="예: 70" />
+
+  <div class="dose-buttons grid-2">
+    <button>유도 6~12mg/kg/hr</button>
+    <button>유지 1~2mg/kg/hr</button>
+    <button>MAC 0.1mg/kg/hr</button>
+    <button>MAC 0.2mg/kg/hr</button>
+  </div>
+
+  <div id="result">결과가 여기에 표시됩니다.</div>
+</body>
+</html>
