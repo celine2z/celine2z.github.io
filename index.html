@@ -1,0 +1,116 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>약물 주입속도 계산기</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    .drug-buttons {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .drug-buttons button {
+      padding: 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background-color: #add8e6;
+      color: black;
+    }
+    .drug-buttons .pink {
+      background-color: #f8a8d8;
+      color: white;
+    }
+    .drug-buttons .pink.selected {
+      background-color: #c71585;
+      color: white;
+    }
+    .dose-buttons {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .dose-buttons button {
+      padding: 10px;
+      background-color: #90ee90;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .dose-buttons .selected {
+      background-color: #006400;
+      color: white;
+    }
+    .output-box {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      background: #f9f9f9;
+    }
+  </style>
+</head>
+<body>
+  <h2>약물 주입속도 계산기</h2>
+
+  <div class="drug-buttons">
+    <button>Norepi/Epi</button>
+    <button>Phenyl</button>
+    <button>Dopa/Dobu</button>
+    <button>NTG</button>
+    <button class="pink">Byfavo</button>
+    <button class="pink selected">Precedex</button>
+  </div>
+
+  <div>
+    <label>선택한 약물: <strong>Precedex (4mcg/ml)</strong></label>
+  </div>
+
+  <div style="margin-top:12px;">
+    <label>체중 (kg):</label>
+    <input type="number" id="weight" placeholder="예: 65" />
+  </div>
+
+  <div class="dose-buttons" id="doseButtons">
+    <button>0.1</button><button>0.2</button><button>0.3</button><button>0.4</button><button>0.5</button>
+    <button>0.6</button><button>0.7</button><button>0.8</button><button>0.9</button><button>1</button>
+  </div>
+
+  <div class="output-box" id="resultBox">결과가 여기에 표시됩니다.</div>
+
+  <script>
+    const weightInput = document.getElementById("weight");
+    const doseButtons = document.querySelectorAll("#doseButtons button");
+    const resultBox = document.getElementById("resultBox");
+
+    doseButtons.forEach(button => {
+      button.addEventListener("click", () => {
+        doseButtons.forEach(btn => btn.classList.remove("selected"));
+        button.classList.add("selected");
+        calculate();
+      });
+    });
+
+    weightInput.addEventListener("input", calculate);
+
+    function calculate() {
+      const weight = parseFloat(weightInput.value);
+      const dose = parseFloat(document.querySelector(".dose-buttons .selected")?.innerText);
+
+      if (!isNaN(weight) && !isNaN(dose)) {
+        const mcg = weight * dose;
+        const mlhr = mcg / 4;  // Precedex는 4mcg/ml
+        resultBox.innerHTML = `• ${weight}kg × ${dose} = ${mcg.toFixed(1)} mcg/hr<br>• 4mcg/ml → <strong>${mlhr.toFixed(2)} ml/hr</strong>`;
+      } else {
+        resultBox.innerText = "결과가 여기에 표시됩니다.";
+      }
+    }
+  </script>
+</body>
+</html>
