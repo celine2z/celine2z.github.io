@@ -1,0 +1,176 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>약물 주입속도 계산기</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            max-width: 480px;
+            width: 100%;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            font-size: 1.5rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        .section-title {
+            font-weight: bold;
+            margin: 1rem 0 0.5rem;
+        }
+        .input-group {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+        input[type="number"] {
+            padding: 0.75rem;
+            font-size: 1rem;
+            width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 0.5rem;
+        }
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+        }
+        .btn {
+            padding: 0.75rem;
+            font-size: 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            text-align: center;
+        }
+        .drug-btn { background-color: #dceeff; color: #0056b3; }
+        .drug-btn.active { background-color: #007bff; color: white; }
+        .dose-btn { background-color: #e2e3e5; color: #333; }
+        .dose-btn.active { background-color: #6c757d; color: white; }
+        .green-btn { background-color: #d4edda; color: #155724; }
+        .green-btn.active { background-color: #28a745; color: white; }
+        .output-box {
+            margin-top: 1rem;
+            padding: 1rem;
+            background-color: #f1f1f1;
+            border-radius: 0.5rem;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>약물 계산기</h1>
+        <div class="section-title">체중 (kg)</div>
+        <div class="input-group"><input type="number" id="weight" placeholder="체중을 입력하세요"></div>
+
+        <div class="section-title">약물 선택</div>
+        <div class="button-grid" id="drug-buttons"></div>
+
+        <div class="section-title">농도 선택</div>
+        <div class="button-grid" id="dose-buttons"></div>
+
+        <div class="section-title">용량 선택</div>
+        <div class="button-grid" id="rate-buttons"></div>
+
+        <div class="section-title">주입 속도 (ml/hr)</div>
+        <div class="output-box" id="output">0.00 ml/hr</div>
+    </div>
+
+    <script>
+        const drugs = {
+            "Norepi/Epi": { doses: ["5 mcg/ml", "10 mcg/ml"], rates: [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1] },
+            "Phenyl": { doses: ["100 mcg/ml"], rates: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0] },
+            "Dopa/Dobu": { doses: ["2 mg/ml"], rates: [1, 2, 3, 4, 5, 10] },
+            "NTG": { doses: ["0.25 mg/ml"], rates: [0.5, 1, 2, 3, 4, 5, 6, 7, 8, 10] },
+            "Byfavo": { doses: ["1 mg/ml", "2 mg/ml"], rates: [6, 7, 8, 9, 10, 1, 2, 0.1, 0.2] },
+            "Precedex": { doses: ["4 mcg/ml"], rates: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0] }
+        };
+
+        let selectedDrug = "";
+        let selectedDose = "";
+        let selectedRate = 0;
+
+        const drugButtonsDiv = document.getElementById("drug-buttons");
+        const doseButtonsDiv = document.getElementById("dose-buttons");
+        const rateButtonsDiv = document.getElementById("rate-buttons");
+        const output = document.getElementById("output");
+
+        const createButtons = (items, container, className, clickHandler) => {
+            container.innerHTML = "";
+            items.forEach(item => {
+                const btn = document.createElement("button");
+                btn.className = `btn ${className}`;
+                btn.innerText = typeof item === "number" ? item.toString() : item;
+                btn.onclick = () => clickHandler(btn, item);
+                container.appendChild(btn);
+            });
+        };
+
+        const handleDrugClick = (btn, drug) => {
+            selectedDrug = drug;
+            selectedDose = "";
+            selectedRate = 0;
+            highlightSelected(btn, "drug-btn");
+            createButtons(drugs[drug].doses, doseButtonsDiv, "dose-btn", handleDoseClick);
+            createButtons(drugs[drug].rates, rateButtonsDiv, "green-btn", handleRateClick);
+            output.innerText = "0.00 ml/hr";
+        };
+
+        const handleDoseClick = (btn, dose) => {
+            selectedDose = dose;
+            highlightSelected(btn, "dose-btn");
+            updateCalculation();
+        };
+
+        const handleRateClick = (btn, rate) => {
+            selectedRate = rate;
+            highlightSelected(btn, "green-btn");
+            updateCalculation();
+        };
+
+        const highlightSelected = (btn, className) => {
+            const buttons = document.getElementsByClassName(className);
+            for (let b of buttons) b.classList.remove("active");
+            btn.classList.add("active");
+        };
+
+        const updateCalculation = () => {
+            const weight = parseFloat(document.getElementById("weight").value);
+            if (!weight || !selectedDrug || !selectedDose || !selectedRate) return;
+
+            let doseValue = parseFloat(selectedDose);
+            let isMcg = selectedDose.includes("mcg");
+            let isMg = selectedDose.includes("mg");
+
+            let totalMcgPerMin = selectedRate * weight;
+            let mlPerHr = 0;
+
+            if (isMcg) {
+                mlPerHr = (totalMcgPerMin * 60) / (doseValue);
+            } else if (isMg) {
+                mlPerHr = (totalMcgPerMin * 60) / (doseValue * 1000);
+            }
+
+            output.innerText = `${mlPerHr.toFixed(2)} ml/hr`;
+        };
+
+        createButtons(Object.keys(drugs), drugButtonsDiv, "drug-btn", handleDrugClick);
+    </script>
+</body>
+</html>
