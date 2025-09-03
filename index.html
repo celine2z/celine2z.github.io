@@ -1,0 +1,143 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>약물 계산기</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        .container {
+            max-width: 500px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .section {
+            margin-bottom: 20px;
+        }
+        .label {
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        .input-box {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+        .drug-button, .dose-button, .concentration-button {
+            flex: 1 1 30%;
+            padding: 10px 0;
+            font-size: 14px;
+            text-align: center;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .drug-button {
+            background: #d0ebff;
+            color: #004085;
+        }
+        .drug-button.active {
+            background: #339af0;
+            color: white;
+        }
+        .concentration-button {
+            background: #dee2e6;
+            color: #343a40;
+        }
+        .concentration-button.active {
+            background: #495057;
+            color: white;
+        }
+        .dose-button {
+            background: #d3f9d8;
+            color: #2b8a3e;
+        }
+        .dose-button.active {
+            background: #38d9a9;
+            color: white;
+        }
+        .result-box {
+            background: #f1f3f5;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #212529;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">약물 계산기</div>
+        <div class="section">
+            <div class="label">체중 (kg)</div>
+            <input type="number" id="weight" class="input-box" placeholder="체중을 입력하세요">
+        </div>
+
+        <div class="section">
+            <div class="label">약물 선택</div>
+            <div class="button-group" id="drug-buttons">
+                <button class="drug-button">Norepi/Epi</button>
+                <button class="drug-button">Phenyl</button>
+                <button class="drug-button">Dopa/Dobu</button>
+                <button class="drug-button">NTG</button>
+                <button class="drug-button">Byfavo</button>
+                <button class="drug-button">Precedex</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="label">농도 선택</div>
+            <div class="button-group" id="concentration-buttons">
+                <button class="concentration-button">5 mcg/ml</button>
+                <button class="concentration-button">10 mcg/ml</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="label">용량 선택</div>
+            <div class="button-group" id="dose-buttons">
+                <button class="dose-button">0.01</button>
+                <button class="dose-button">0.02</button>
+                <button class="dose-button">0.03</button>
+                <button class="dose-button">0.04</button>
+                <button class="dose-button">0.05</button>
+                <button class="dose-button">0.06</button>
+                <button class="dose-button">0.07</button>
+                <button class="dose-button">0.08</button>
+                <button class="dose-button">0.09</button>
+                <button class="dose-button">0.1</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="label">주입 속도 (ml/hr)</div>
+            <div id="result" class="result-box">0.00 ml/hr</div>
+        </div>
+    </div>
+</body>
+</html>
