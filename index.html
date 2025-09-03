@@ -1,0 +1,98 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>약물 주입속도 계산기</title>
+  <style>
+    body {
+      font-family: "Apple SD Gothic Neo", sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    .title {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .drug-button {
+      width: 110px;
+      height: 40px;
+      margin: 5px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #cce5ff; /* 연파랑 */
+    }
+    .drug-button.byfavo {
+      background-color: #f8c8dc; /* 연분홍 */
+    }
+    .drug-button.precedex {
+      background-color: #cce5ff; /* 연파랑으로 통일 */
+    }
+    .selected {
+      font-weight: bold;
+      color: white !important;
+      background-color: #007bff !important;
+    }
+    .byfavo.selected {
+      background-color: #800080 !important; /* 진한 자주 */
+    }
+    .label {
+      font-weight: bold;
+      margin: 10px 0 5px;
+    }
+    input[type="text"] {
+      width: 250px;
+      height: 30px;
+      font-size: 16px;
+      padding: 5px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #800000;
+    }
+  </style>
+</head>
+<body>
+  <div class="title">약물 주입속도 계산기</div>
+
+  <div class="button-group">
+    <button class="drug-button" onclick="selectDrug('Norepinephrine/Epinephrine')">Norepi/Epi</button>
+    <button class="drug-button" onclick="selectDrug('Phenylephrine')">Phenyl</button>
+    <button class="drug-button" onclick="selectDrug('Dopamine/Dobutamine')">Dopa/Dobu</button>
+    <button class="drug-button" onclick="selectDrug('Nitroglycerin')">NTG</button>
+    <button class="drug-button drug-button byfavo" onclick="selectDrug('Remimazolam (Byfavo)')">Byfavo</button>
+    <button class="drug-button drug-button precedex" onclick="selectDrug('Precedex')">Precedex</button>
+  </div>
+
+  <div class="label">선택한 약물:</div>
+  <input type="text" id="selectedDrug" readonly>
+
+  <div class="label">체중 (kg):</div>
+  <input type="text" id="weight" placeholder="예: 70">
+
+  <div id="result">결과가 여기에 표시됩니다.</div>
+
+  <script>
+    function selectDrug(drugName) {
+      document.getElementById("selectedDrug").value = drugName;
+      document.querySelectorAll(".drug-button").forEach(btn => btn.classList.remove("selected"));
+      event.target.classList.add("selected");
+    }
+  </script>
+</body>
+</html>
