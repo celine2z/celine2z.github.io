@@ -1,0 +1,188 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>약물 주입속도 계산기</title>
+    <style>
+        body {
+            font-family: "Helvetica Neue", sans-serif;
+            padding: 20px;
+            background-color: #fff;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .drug-button {
+            flex: 1 1 calc(33.33% - 10px);
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            color: white;
+        }
+        .drug-button.default {
+            background-color: #aad4f5;
+        }
+        .drug-button.selected-default {
+            background-color: #0b74c9;
+        }
+        .drug-button.byfavo {
+            background-color: #f7c4de;
+        }
+        .drug-button.selected-byfavo {
+            background-color: #a84a9c;
+        }
+        .section {
+            margin-bottom: 15px;
+        }
+        input[type="number"] {
+            padding: 8px;
+            width: 100%;
+            font-size: 16px;
+            margin-top: 5px;
+            box-sizing: border-box;
+        }
+        .result {
+            margin-top: 20px;
+            font-weight: bold;
+            font-size: 20px;
+            color: #aa0000;
+        }
+    </style>
+</head>
+<body>
+    <h1>약물 주입속도 계산기</h1>
+
+    <div class="button-group">
+        <button class="drug-button default" onclick="selectDrug('Norepinephrine')">Norepi/Epi</button>
+        <button class="drug-button default" onclick="selectDrug('Phenylephrine')">Phenyl</button>
+        <button class="drug-button default" onclick="selectDrug('DopamineDobutamine')">Dopa/Dobu</button>
+        <button class="drug-button default" onclick="selectDrug('NTG')">NTG</button>
+        <button class="drug-button byfavo" onclick="selectDrug('Remimazolam')">Byfavo</button>
+    </div>
+
+    <div class="section">
+        <label>선택한 약물:</label>
+        <input type="text" id="selectedDrug" readonly />
+    </div>
+
+    <div class="section">
+        <label>농도 선택 (mg/ml):</label>
+        <div id="concentrationButtons"></div>
+    </div>
+
+    <div class="section">
+        <label>체중 (kg):</label>
+        <input type="number" id="weight" placeholder="예: 70" />
+    </div>
+
+    <div class="section">
+        <div id="doseButtons" class="button-group"></div>
+    </div>
+
+    <div id="result" class="result">결과가 여기에 표시됩니다.</div>
+
+    <script>
+        const concentrationMap = {
+            'Norepinephrine': ['5', '10'],
+            'Phenylephrine': ['100'],
+            'DopamineDobutamine': ['2'],
+            'NTG': ['0.25'],
+            'Remimazolam': ['1', '2'],
+        };
+
+        const doseMap = {
+            'Norepinephrine': ['0.01', '0.02', '0.03', '0.04', '0.05', '0.06', '0.07', '0.08', '0.09', '0.1'],
+            'Phenylephrine': ['0.1', '0.2', '0.3', '0.4', '0.5', '0.6', '0.7', '0.8', '0.9', '1.0'],
+            'DopamineDobutamine': ['1', '2', '3', '4', '5', '10'],
+            'NTG': ['0.5', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+            'Remimazolam': ['6', '7', '8', '9', '10', '11', '12'],
+        };
+
+        let selectedDrug = '';
+        let selectedConcentration = '';
+        let selectedDose = '';
+
+        function selectDrug(drug) {
+            selectedDrug = drug;
+            document.getElementById('selectedDrug').value = getDrugDisplayName(drug);
+            renderConcentrationButtons(drug);
+            renderDoseButtons(drug);
+        }
+
+        function getDrugDisplayName(drug) {
+            switch(drug) {
+                case 'Norepinephrine': return 'Norepinephrine (Epinephrine 포함)';
+                case 'Phenylephrine': return 'Phenylephrine';
+                case 'DopamineDobutamine': return 'Dopamine/Dobutamine';
+                case 'NTG': return 'Nitroglycerin';
+                case 'Remimazolam': return 'Remimazolam(Byfavo)';
+                default: return '';
+            }
+        }
+
+        function renderConcentrationButtons(drug) {
+            const container = document.getElementById('concentrationButtons');
+            container.innerHTML = '';
+            concentrationMap[drug].forEach(value => {
+                const btn = document.createElement('button');
+                btn.textContent = value + ' mg/ml';
+                btn.className = 'drug-button default';
+                btn.onclick = () => {
+                    selectedConcentration = value;
+                    calculateResult();
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function renderDoseButtons(drug) {
+            const container = document.getElementById('doseButtons');
+            container.innerHTML = '';
+            doseMap[drug].forEach(value => {
+                const btn = document.createElement('button');
+                btn.textContent = value + getDoseUnit(drug);
+                btn.className = 'drug-button default';
+                btn.onclick = () => {
+                    selectedDose = value;
+                    calculateResult();
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function getDoseUnit(drug) {
+            if (drug === 'Remimazolam') return 'mg/kg/hr';
+            return 'mcg/kg/min';
+        }
+
+        function calculateResult() {
+            const weight = parseFloat(document.getElementById('weight').value);
+            const concentration = parseFloat(selectedConcentration);
+            const dose = parseFloat(selectedDose);
+
+            if (!weight || !concentration || !dose) {
+                document.getElementById('result').textContent = '결과가 여기에 표시됩니다.';
+                return;
+            }
+
+            let dosePerMin = dose * weight;
+            let dosePerHr = (selectedDrug === 'Remimazolam') ? dosePerMin : dosePerMin * 60;
+            let mlPerHr = dosePerHr / concentration;
+
+            document.getElementById('result').textContent =
+                `${getDrugDisplayName(selectedDrug)} ${dose}${getDoseUnit(selectedDrug)} → ${mlPerHr.toFixed(1)}ml/hr`;
+        }
+    </script>
+</body>
+</html>
