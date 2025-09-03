@@ -1,0 +1,57 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>약물계산기</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            padding: 20px;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        .container {
+            max-width: 500px;
+            margin: auto;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .drug-button {
+            background-color: #e0f0ff;
+            color: #005792;
+            padding: 10px;
+            text-align: center;
+            border: none;
+            cursor: pointer;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+        .drug-button.selected {
+            background-color: #005792;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>약물계산기</h1>
+        <div class="button-grid">
+            <button class="drug-button">Norepi/Epi</button>
+            <button class="drug-button">Phenyl</button>
+            <button class="drug-button">Dopa/Dobu</button>
+            <button class="drug-button">NTG</button>
+            <button class="drug-button">Byfavo</button>
+            <button class="drug-button">Precedex</button>
+        </div>
+    </div>
+</body>
+</html>
