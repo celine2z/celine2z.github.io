@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>약물 계산기</title>
+<style>
+    body {
+      font-family: 'Arial', sans-serif;
+      padding: 20px;
+      max-width: 500px;
+      margin: auto;
+    }
+    h1 {
+      font-size: 1.5rem;
+      text-align: center;
+    }
+    .section {
+      margin-bottom: 15px;
+    }
+    .label {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .button-group button {
+      padding: 10px;
+      font-size: 0.95rem;
+      flex: 1 1 30%;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .drug-button {
+      background-color: #cce6ff;
+      color: black;
+    }
+    .drug-button.selected {
+      background-color: #3399ff;
+      color: white;
+    }
+    .drug-button.pink {
+      background-color: #f9d2e4;
+    }
+    .drug-button.pink.selected {
+      background-color: #990066;
+      color: white;
+    }
+    .concentration-button {
+      background-color: #e0e0e0;
+      color: black;
+    }
+    .concentration-button.selected {
+      color: yellow;
+      background-color: #666;
+    }
+    .dose-button {
+      background-color: #ccf5cc;
+    }
+    .dose-button.selected {
+      background-color: #339933;
+      color: white;
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 24px;
+      font-weight: bold;
+      color: darkred;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+<h1>약물 계산기</h1>
+<div class="section">
+<label for="weight">체중 (kg):</label>
+<input id="weight" max="200" min="1" step="0.1" type="number"/>
+</div>
+<div class="section">
+<div class="label">약물 선택 :</div>
+<div class="button-group" id="drugButtons">
+<button class="drug-button" data-drug="Norepi/Epi">Norepi/Epi</button>
+<button class="drug-button" data-drug="Phenyl">Phenyl</button>
+<button class="drug-button" data-drug="Dopa/Dobu">Dopa/Dobu</button>
+<button class="drug-button" data-drug="NTG">NTG</button>
+<button class="drug-button pink" data-drug="Byfavo">Byfavo</button>
+<button class="drug-button pink" data-drug="Precedex">Precedex</button>
+</div>
+</div>
+<div class="section">
+<div class="label">농도 선택 :</div>
+<div class="button-group" id="concentrationButtons"></div>
+</div>
+<div class="section">
+<div class="label">용량 선택 :</div>
+<div class="button-group" id="doseButtons"></div>
+</div>
+<div id="result"></div>
+<script>
+    const drugs = {
+      "Norepi/Epi": {
+        concentrations: [5, 10],
+        doses: [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1],
+        unit: "mcg/kg/min",
+      },
+      "Phenyl": {
+        concentrations: [100],
+        doses: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+        unit: "mcg/kg/min",
+      },
+      "Dopa/Dobu": {
+        concentrations: [2],
+        doses: [1, 2, 3, 4, 5, 10],
+        unit: "mcg/kg/min",
+      },
+      "NTG": {
+        concentrations: [0.25],
+        doses: [0.5, 1, 2],
+        unit: "mcg/kg/min",
+      },
+      "Byfavo": {
+        concentrations: [1, 2],
+        doses: ["유도", "유지"],
+        unit: "mg/kg/hr",
+      },
+      "Precedex": {
+        concentrations: [4],
+        doses: [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0],
+        unit: "mcg/kg/hr"
+      }
+    };
+
+    let selectedDrug = null;
+    let selectedConc = null;
+    let selectedDose = null;
+
+    function renderButtons() {
+      const concContainer = document.getElementById("concentrationButtons");
+      const doseContainer = document.getElementById("doseButtons");
+      concContainer.innerHTML = "";
+      doseContainer.innerHTML = "";
+      selectedConc = null;
+      selectedDose = null;
+
+      if (!selectedDrug) return;
+
+      const drug = drugs[selectedDrug];
+
+      drug.concentrations.forEach(c => {
+        const btn = document.createElement("button");
+        btn.className = "concentration-button";
+        btn.innerText = `${c} ${selectedDrug === "Dopa/Dobu" || selectedDrug === "Byfavo" ? "mg/ml" : "mcg/ml"}`;
+        btn.onclick = () => {
+          document.querySelectorAll(".concentration-button").forEach(b => b.classList.remove("selected"));
+          btn.classList.add("selected");
+          selectedConc = c;
+          calculate();
+        };
+        concContainer.appendChild(btn);
+      });
+
+      if (selectedDrug === "Byfavo") {
+        const doseMap = {
+          "유도": "마취유도 (6~12mg/kg/hr)",
+          "유지": "마취유지 (1~2mg/kg/hr)"
+        };
+        drug.doses.forEach(d => {
+          const btn = document.createElement("button");
+          btn.className = "dose-button";
+          btn.innerText = doseMap[d];
+          btn.onclick = () => {
+            document.querySelectorAll(".dose-button").forEach(b => b.classList.remove("selected"));
+            btn.classList.add("selected");
+            selectedDose = d;
+            calculate();
+          };
+          doseContainer.appendChild(btn);
+        });
+      } else {
+        drug.doses.forEach(d => {
+          const btn = document.createElement("button");
+          btn.className = "dose-button";
+          btn.innerText = d;
+          btn.onclick = () => {
+            document.querySelectorAll(".dose-button").forEach(b => b.classList.remove("selected"));
+            btn.classList.add("selected");
+            selectedDose = d;
+            calculate();
+          };
+          doseContainer.appendChild(btn);
+        });
+      }
+    }
+
+    function calculate() {
+      const weight = parseFloat(document.getElementById("weight").value);
+      const result = document.getElementById("result");
+
+      if (!selectedDrug || !selectedConc || !weight || !selectedDose) {
+        result.innerText = "";
+        return;
+      }
+
+      if (selectedDrug === "Byfavo") {
+        let range;
+        if (selectedDose === "유도") {
+          range = [6, 12];
+        } else if (selectedDose === "유지") {
+          range = [1, 2];
+        }
+
+        const min = ((weight * range[0]) / selectedConc).toFixed(2);
+        const max = ((weight * range[1]) / selectedConc).toFixed(2);
+        result.innerText = `${min} ~ ${max} ml/hr`;
+        return;
+      }
+
+      let mcgPerMin = selectedDose * weight;
+      let mlPerHr = (mcgPerMin * 60) / (selectedConc * 1000);
+      result.innerText = `${mlPerHr.toFixed(2)} ml/hr`;
+    }
+
+    document.querySelectorAll(".drug-button").forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll(".drug-button").forEach(b => b.classList.remove("selected"));
+        btn.classList.add("selected");
+        selectedDrug = btn.dataset.drug;
+        renderButtons();
+      };
+    });
+  </script>
+</body>
+</html>
