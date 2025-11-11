@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>아이 해열제 계산 · 기록 · 농도그래프 (v2·compact + cursor)</title>
+<style>
+  :root{ --bg:#f6f7f9;--card:#ffffff;--ink:#0f172a;--muted:#64748b;
+    --pink:#ff5a7a;--pinkBg:#ffe8ee; --blue:#4f67ff;--blueBg:#e9edff;
+    --green:#10b981;--greenBg:#e6fff6; --ring:#cbd5e1; --good:#10b981; --warn:#f59e0b; --bad:#ef4444;}
+  html,body{height:100%}
+  body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;background:var(--bg);color:var(--ink);font-size:13px}
+  .wrap{max-width:920px;margin:0 auto;padding:12px}
+  h1{font-size:18px;margin:4px 0 10px}
+  .grid{display:grid;gap:8px}
+  .grid.cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+  @media (max-width:760px){.grid.cols-2{grid-template-columns:1fr}}
+  .card{background:var(--card);border-radius:12px;box-shadow:0 1px 2px rgba(0,0,0,.05);padding:10px}
+  .row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+  .section-title{font-size:12px;color:var(--muted);margin:0 0 6px}
+  .chip{font-size:11px;padding:3px 7px;border-radius:999px;background:#f1f5f9;color:#0f172a}
+  .pill{border:none;border-radius:10px;padding:8px 10px;background:#0ea5e9;color:#fff;cursor:pointer;font-size:13px}
+  .ghost{background:#f1f5f9;color:#0f172a}
+  .ghost:hover{background:#e2e8f0}
+  .kicker{font-size:11px;color:var(--muted)}
+  .big{font-size:18px;font-weight:700}
+  .line{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--ring);border-radius:10px;background:#fafbff}
+  .line .label{min-width:104px;font-weight:700}
+  .inline-input{display:flex;align-items:center;gap:4px;background:#fff;border:1px solid #e5e7eb;border-radius:9px;padding:3px 5px}
+  .inline-input input{width:46px;border:none;outline:none;font:inherit;background:transparent;text-align:right}
+  .inline-input .sep{opacity:.6}
+  input[type="number"],input[type="datetime-local"]{font:inherit;border:1px solid #e5e7eb;border-radius:9px;padding:7px 8px;background:#fff}
+  input[type="number"]{width:86px}
+  .drug-btn{border:none;border-radius:10px;padding:8px 10px;cursor:pointer;font-weight:700;font-size:13px}
+  .drug-ap{background:var(--pinkBg);color:var(--pink)}
+  .drug-ib{background:var(--blueBg);color:var(--blue)}
+  .drug-dx{background:var(--greenBg);color:var(--green)}
+  .ok{background:#111827;color:#fff}
+  canvas{width:100%;max-width:100%;height:260px;background:#fff;border-radius:10px}
+  .toolbar{display:flex;gap:6px;flex-wrap:wrap}
+  .toolbar select{border:1px solid #e5e7eb;border-radius:9px;padding:6px 8px;background:#fff;font:inherit}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:6px;border-bottom:1px solid #f0f3f6;text-align:left}
+  td.right,th.right{text-align:right}
+  /* summary card */
+  .summary{display:flex;align-items:center;gap:10px;background:#ecfdf5;border:1px solid #bbf7d0;border-radius:12px;padding:10px;margin-top:8px}
+  .summary.bad{background:#fef2f2;border-color:#fecaca}
+  .summary.warn{background:#fffbeb;border-color:#fde68a}
+  .badge{padding:2px 8px;border-radius:999px;font-weight:700;font-size:12px}
+  .badge.good{background:#d1fae5;color:#065f46}
+  .badge.warn{background:#fef3c7;color:#92400e}
+  .badge.bad{background:#fee2e2;color:#991b1b}
+  .summary .title{font-size:16px;font-weight:800;margin-right:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>아이 해열제 계산 · 기록 · 농도그래프</h1>
+
+  <div class="grid cols-2">
+    <div class="card">
+      <div class="section-title">기본 정보</div>
+      <div class="row">
+        <span class="chip">체중(kg)</span>
+        <input id="weight" type="number" step="0.1" min="3" max="80" />
+        <button id="saveWeight" class="pill ghost">저장</button>
+        <span id="weightHint" class="kicker"></span>
+      </div>
+
+      <div class="section-title" style="margin-top:6px">현용 현탁농도 (필요시만 변경)</div>
+      <div class="line">
+        <div class="label">아세트아미노펜</div>
+        <div class="inline-input"><input id="concAPAP" type="number" step="1" value="160"><span class="sep">mg /</span><input id="concAPAPml" type="number" step="0.1" value="5"><span class="sep">mL</span></div>
+      </div>
+      <div class="line">
+        <div class="label">이부프로펜</div>
+        <div class="inline-input"><input id="concIBU" type="number" step="1" value="100"><span class="sep">mg /</span><input id="concIBUml" type="number" step="0.1" value="5"><span class="sep">mL</span></div>
+      </div>
+      <div class="line">
+        <div class="label">덱시부프로펜</div>
+        <div class="inline-input"><input id="concDEX" type="number" step="1" value="60"><span class="sep">mg /</span><input id="concDEXml" type="number" step="0.1" value="5"><span class="sep">mL</span></div>
+      </div>
+      <div class="kicker" style="margin-top:4px">숫자를 바꾸면 자동 저장돼요.</div>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <button class="drug-btn drug-ap" onclick="setDose('APAP')">아세트아미노펜</button>
+        <button class="drug-btn drug-ib" onclick="setDose('IBU')">이부프로펜</button>
+        <button class="drug-btn drug-dx" onclick="setDose('DEX')">덱시부프로펜</button>
+      </div>
+
+      <div id="doseBox" style="margin-top:6px">
+        <div class="row">
+          <div class="chip">권장 1회 용량</div>
+          <div id="rangeText" class="big"></div>
+        </div>
+        <div class="row">
+          <div class="chip">이번 용량(mg)</div>
+          <input id="doseMg" type="number" step="1" />
+          <span id="doseToMl" class="kicker"></span>
+        </div>
+        <div class="row">
+          <div class="chip">복용 시각</div>
+          <input id="doseTime" type="datetime-local" />
+          <button class="pill ok" onclick="addDose()">기록하기</button>
+        </div>
+        <div class="kicker" id="maxDaily"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <div class="toolbar">
+        <button class="pill ghost" onclick="pan(-2)">← 2h</button>
+        <button class="pill ghost" onclick="pan(-6)">← 6h</button>
+        <button class="pill ghost" onclick="nowCenter()">지금</button>
+        <button class="pill ghost" onclick="pan(6)">6h →</button>
+        <button class="pill ghost" onclick="pan(12)">12h →</button>
+        <select id="windowH" onchange="draw()">
+          <option value="12">창: 12h</option>
+          <option value="24" selected>창: 24h</option>
+          <option value="36">창: 36h</option>
+        </select>
+        <select id="viewMode" onchange="draw()">
+          <option value="overlay">개별 곡선</option>
+          <option value="stack">합산 지수</option>
+        </select>
+        <select id="effectBand" onchange="draw()">
+          <option value="0">효과권: 표시 안함</option>
+          <option value="0.25">효과권: 지수 ≥ 0.25</option>
+          <option value="0.33" selected>효과권: 지수 ≥ 0.33</option>
+          <option value="0.5">효과권: 지수 ≥ 0.50</option>
+        </select>
+      </div>
+      <div class="row">
+        <button class="pill ghost" onclick="clearToday()">오늘 기록 삭제</button>
+        <button class="pill ghost" onclick="clearAll()">전체 초기화</button>
+      </div>
+    </div>
+    <canvas id="chart" width="900" height="260"></canvas>
+    <div id="summaryCard" class="summary" style="display:none"></div>
+    <div class="kicker">모델: 단일 구획 + 1차 흡수(Bateman). 곡선은 상대(정규화) 값이며, ‘효과권’은 설정한 지수 기준으로 시각적 보조선입니다.</div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin:2px 0 6px">최근 24시간 복용 이력</h3>
+    <table id="logTbl">
+      <thead><tr><th>시각</th><th>약</th><th class="right">용량 (mg)</th><th class="right">mL</th><th></th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <div id="dailyTotals" class="kicker"></div>
+  </div>
+</div>
+
+<script>
+const store = {
+  get(){try{return JSON.parse(localStorage.getItem('antipyretic_v1')||'{}')}catch(e){return {}}},
+  set(d){localStorage.setItem('antipyretic_v1',JSON.stringify(d))}
+};
+
+const DRUGS = {
+  APAP: {name:'아세트아미노펜', tHalf:2.2, Ka:2.0, recMgKg:[10,15], maxDailyMgKgRange:[60,75], key:'APAP', color:'#ff5a7a'},
+  IBU:  {name:'이부프로펜', tHalf:2.0, Ka:1.5, recMgKg:[5,10],  maxDailyMgKgRange:[30,40], key:'IBU', color:'#4f67ff'},
+  DEX:  {name:'덱시부프로펜', tHalf:2.2, Ka:1.5, recMgKg:[5,7],  maxDailyMgKgRange:[20,30], key:'DEX', color:'#10b981'}
+};
+
+function getConcs(){
+  const s = store.get();
+  return { APAP:(s.concAPAP||160)/(s.concAPAPml||5),
+           IBU:(s.concIBU||100)/(s.concIBUml||5),
+           DEX:(s.concDEX||60)/(s.concDEXml||5) };
+}
+
+let active='APAP'; let centerTs=Date.now();
+
+function init(){
+  const s = store.get();
+  document.getElementById('weight').value = s.weight||'';
+  document.getElementById('saveWeight').onclick = ()=>{
+    const s2 = store.get(); s2.weight = parseFloat(document.getElementById('weight').value)||null; store.set(s2);
+    refreshDoseBox(); renderLog(); draw();
+  };
+  ['APAP','IBU','DEX'].forEach(k=>{
+    const low = k==='APAP'?'concAPAP':k==='IBU'?'concIBU':'concDEX';
+    const lowml = low+'ml';
+    document.getElementById(low).value = s[low] ?? (k==='APAP'?160:k==='IBU'?100:60);
+    document.getElementById(lowml).value = s[lowml] ?? 5;
+    document.getElementById(low).addEventListener('input',saveConcs);
+    document.getElementById(lowml).addEventListener('input',saveConcs);
+  });
+  document.getElementById('doseTime').value = toLocalInputValue(new Date());
+  refreshDoseBox(); renderLog(); draw();
+}
+
+function saveConcs(){
+  const s = store.get();
+  ['concAPAP','concAPAPml','concIBU','concIBUml','concDEX','concDEXml'].forEach(id=>{
+    s[id] = parseFloat(document.getElementById(id).value);
+  });
+  store.set(s); refreshDoseBox(); draw();
+}
+
+function setDose(k){
+  active=k; document.getElementById('doseTime').value = toLocalInputValue(new Date());
+  refreshDoseBox();
+}
+
+function refreshDoseBox(){
+  const w = parseFloat(document.getElementById('weight').value)||0;
+  const d = DRUGS[active]; const concs=getConcs();
+  const [minMgKg, maxMgKg] = d.recMgKg;
+  const minMg = w*minMgKg, maxMg = w*maxMgKg;
+  const mLperMg = 1/concs[active];
+  document.getElementById('rangeText').textContent = w? `${Math.round(minMg)}–${Math.round(maxMg)} mg (≈ ${(minMg*mLperMg).toFixed(1)}–${(maxMg*mLperMg).toFixed(1)} mL)` : '체중 입력 필요';
+  document.getElementById('doseMg').value = w? Math.round(w*((minMgKg+maxMgKg)/2)) : '';
+  document.getElementById('doseToMl').textContent = w? `→ ${(document.getElementById('doseMg').value * mLperMg).toFixed(1)} mL 예상` : '';
+  const [lo,hi] = d.maxDailyMgKgRange;
+  document.getElementById('maxDaily').innerHTML = `24시간 최대: <b>${lo}–${hi} mg/kg</b> (기관마다 차이). 보수 계산은 낮은 값으로 평가.`;
+  document.getElementById('weightHint').textContent = w? `권장 범위 자동 계산 중` : '';
+}
+
+function addDose(){
+  const s = store.get(); const arr = s.log || [];
+  const mg = parseFloat(document.getElementById('doseMg').value);
+  const t = new Date(document.getElementById('doseTime').value);
+  if(!mg || isNaN(t.getTime())){ alert('용량과 시각을 확인해주세요.'); return; }
+  arr.push({ts: t.toISOString(), drug: active, mg});
+  s.log = arr; store.set(s);
+  renderLog(); draw();
+}
+
+function renderLog(){
+  const s = store.get(); const arr = (s.log||[]).filter(Boolean);
+  const keepAfter = Date.now() - 7*24*3600*1000;
+  const tbody = document.querySelector('#logTbl tbody'); tbody.innerHTML='';
+  const concs = getConcs();
+  const rows = arr.filter(x=>new Date(x.ts).getTime()>=keepAfter).sort((a,b)=>new Date(b.ts)-new Date(a.ts));
+  rows.forEach((x)=>{
+    const tr = document.createElement('tr');
+    const mL = (x.mg * (1/concs[x.drug])).toFixed(1);
+    tr.innerHTML = `<td>${fmt(new Date(x.ts))}</td><td>${DRUGS[x.drug].name}</td><td class="right">${x.mg}</td><td class="right">${mL}</td><td><button class="pill ghost" onclick="del('${x.ts}')">삭제</button></td>`;
+    tbody.appendChild(tr);
+  });
+  const w = store.get().weight||0;
+  const since24 = Date.now()-24*3600*1000;
+  const in24 = rows.filter(x=>new Date(x.ts).getTime()>=since24);
+  const totals = {APAP:0, IBU:0, DEX:0};
+  in24.forEach(x=>totals[x.drug]+=x.mg);
+  const apapMax = w*DRUGS.APAP.maxDailyMgKgRange[0];
+  const ibuMax  = w*DRUGS.IBU.maxDailyMgKgRange[0];
+  const dexMax  = w*DRUGS.DEX.maxDailyMgKgRange[0];
+  document.getElementById('dailyTotals').innerHTML =
+    `최근 24시간 누계 — 아세트아미노펜 <b>${Math.round(totals.APAP)}</b> / ${Math.round(apapMax)} mg, ` +
+    `이부프로펜 <b>${Math.round(totals.IBU)}</b> / ${Math.round(ibuMax)} mg, ` +
+    `덱시부프로펜 <b>${Math.round(totals.DEX)}</b> / ${Math.round(dexMax)} mg`;
+}
+
+function del(ts){
+  const s = store.get(); s.log = (s.log||[]).filter(x=>x.ts!==ts); store.set(s);
+  renderLog(); draw();
+}
+
+function clearToday(){
+  const s = store.get();
+  const start = new Date(); start.setHours(0,0,0,0);
+  s.log = (s.log||[]).filter(x=>new Date(x.ts).getTime()<start.getTime()); store.set(s);
+  renderLog(); draw();
+}
+function clearAll(){
+  if(!confirm('모든 기록을 삭제할까요?')) return;
+  store.set({weight: store.get().weight, concAPAP:store.get().concAPAP, concAPAPml:store.get().concAPAPml,
+             concIBU:store.get().concIBU, concIBUml:store.get().concIBUml, concDEX:store.get().concDEX, concDEXml:store.get().concDEXml});
+  renderLog(); draw();
+}
+
+function toLocalInputValue(d){
+  const z = new Date(d.getTime()-d.getTimezoneOffset()*60000);
+  return z.toISOString().slice(0,16);
+}
+function fmt(d){
+  const p = n=>String(n).padStart(2,'0');
+  return `${d.getMonth()+1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+function pkSum(drugKey, t0, t1, stepMin){
+  const s = store.get(); const arr = s.log||[];
+  const doses = arr.filter(x=>x.drug===drugKey);
+  const d = DRUGS[drugKey];
+  const Ke = Math.log(2)/d.tHalf;
+  const Ka = d.Ka;
+  const points = [];
+  for(let t=t0; t<=t1; t+=stepMin*60*1000){
+    let C = 0;
+    for(const dd of doses){
+      const dt = (t - new Date(dd.ts).getTime())/3600000;
+      if(dt>0){
+        C += dd.mg * (Ka/(Ka-Ke)) * (Math.exp(-Ke*dt) - Math.exp(-Ka*dt));
+      }
+    }
+    points.push({t, C});
+  }
+  let maxC = 0; for(const p of points){ if(p.C>maxC) maxC = p.C; }
+  const norm = maxC>0? points.map(p=>({t:p.t, y:p.C/maxC})) : points.map(p=>({t:p.t, y:0}));
+  return {norm, raw:points, maxC};
+}
+
+function getCurrentIndices(A,I,D, start, end){
+  const now = Date.now();
+  const arrLen = A.norm.length;
+  const idx = Math.round((now - start) / ((end-start)/(arrLen-1)));
+  function clamp(n){return Math.max(0, Math.min(arrLen-1, n));}
+  const i = clamp(idx);
+  return {
+    now,
+    apap: A.norm[i]?.y || 0,
+    ibu:  I.norm[i]?.y || 0,
+    dex:  D.norm[i]?.y || 0,
+    combo: Math.min(1, ((A.norm[i]?.y||0)+(I.norm[i]?.y||0)+(D.norm[i]?.y||0))/3)
+  };
+}
+
+function renderSummaryCard(indices){
+  const el = document.getElementById('summaryCard');
+  const band = parseFloat(document.getElementById('effectBand').value||'0.33');
+  const grade = indices.combo >= 0.5 ? 'good' : indices.combo >= band ? 'warn' : 'bad';
+  const badgeText = grade==='good'?'충분':'낮음';
+  const badgeClass = grade==='good'?'good':(grade==='warn'?'warn':'bad');
+  const time = new Date(indices.now);
+  const p2 = n=>String(n).padStart(2,'0');
+  const hhmm = `${p2(time.getHours())}:${p2(time.getMinutes())}`;
+  el.className = `summary ${grade==='good'?'':'warn'} ${grade==='bad'?'bad':''}`.trim();
+  el.style.display = 'flex';
+  el.innerHTML = `
+    <span class="badge ${badgeClass}">${badgeText}</span>
+    <div>
+      <div><span class="title">현재 효과 지수</span><b>${indices.combo.toFixed(2)}</b> (기준 ${band}) · ${hhmm}</div>
+      <div class="kicker">아세 ${indices.apap.toFixed(2)} · 이부 ${indices.ibu.toFixed(2)} · 덱시 ${indices.dex.toFixed(2)}</div>
+      <div class="kicker">${grade==='bad'?'해열 효과가 약할 수 있어요. 열이 지속되면 교차 복용은 ≥2시간 후, 같은 약은 ≥4시간 후를 권장합니다.':(grade==='warn'?'효과가 줄어드는 구간이에요. 증상 관찰을 권장합니다.':'효과가 충분한 구간이에요.')}</div>
+    </div>`;
+}
+
+function draw(){
+  const canvas = document.getElementById('chart');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const windowH = parseInt(document.getElementById('windowH').value,10);
+  const start = centerTs - (windowH/2)*3600*1000;
+  const end   = centerTs + (windowH/2)*3600*1000;
+  const stepMin = 6;
+  const A = pkSum('APAP', start, end, stepMin);
+  const I = pkSum('IBU',  start, end, stepMin);
+  const D = pkSum('DEX',  start, end, stepMin);
+  const mode = document.getElementById('viewMode').value;
+  const band = parseFloat(document.getElementById('effectBand').value||'0');
+
+  const pad = 36; const H = canvas.height, W = canvas.width;
+  const xPos = t => pad + (W-pad-10) * ((t-start)/(end-start));
+  const yPos = y => { const h = H-pad/2-10; return 10 + h*(1-y); };
+
+  // grid
+  (function(){
+    const c=ctx; c.strokeStyle='#e5e7eb'; c.beginPath();
+    for(let i=0;i<=6;i++){ const x = xPos(start + (end-start)*i/6); c.moveTo(x,10); c.lineTo(x,H-pad/2); }
+    for(let j=0;j<=4;j++){ const y = 10 + (H-pad/2-10)*j/4; c.moveTo(pad,y); c.lineTo(W-10,y); }
+    c.stroke();
+  })();
+
+  // effect band background
+  if(band>0){
+    ctx.fillStyle = 'rgba(14,165,233,0.12)';
+    ctx.fillRect(pad, yPos(1), W-pad-10, yPos(band)-yPos(1));
+    ctx.fillStyle = '#0ea5e9'; ctx.fillRect(W-180, 14, 10,10);
+    ctx.fillStyle = '#0f172a'; ctx.fillText(`효과권 지수 ≥ ${band}`, W-165, 22);
+  }
+
+  // curves
+  const datasets = [
+    {data:A.norm, color:'#ff5a7a', label:'아세트아미노펜'},
+    {data:I.norm, color:'#4f67ff', label:'이부프로펜'},
+    {data:D.norm, color:'#10b981', label:'덱시부프로펜'}
+  ];
+
+  if(mode==='overlay'){
+    datasets.forEach((ds,idx)=>{
+      ctx.strokeStyle = ds.color; ctx.lineWidth = 2; ctx.beginPath();
+      ds.data.forEach((p,i)=>{ const x=xPos(p.t), y=yPos(p.y); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); });
+      ctx.stroke();
+      ctx.fillStyle = ds.color; ctx.fillRect(W-180, 34+16*idx, 10,10);
+      ctx.fillStyle = '#0f172a'; ctx.fillText(ds.label, W-165, 42+16*idx);
+    });
+  }else{
+    const n = A.norm.map((p,i)=>({t:p.t, y:Math.min(1,(p.y + I.norm[i].y + D.norm[i].y)/3)}));
+    ctx.strokeStyle = '#111827'; ctx.lineWidth = 2; ctx.beginPath();
+    n.forEach((p,i)=>{ const x=xPos(p.t), y=yPos(p.y); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); });
+    ctx.stroke();
+    ctx.fillStyle = '#111827'; ctx.fillRect(W-180, 34, 10,10);
+    ctx.fillStyle = '#0f172a'; ctx.fillText('합산 효과 지수', W-165, 42);
+  }
+
+  // current-time vertical cursor
+  const now = Date.now();
+  if(now>=start && now<=end){
+    const x = xPos(now);
+    ctx.strokeStyle = 'rgba(2,6,23,0.25)'; ctx.lineWidth = 2; ctx.beginPath();
+    ctx.moveTo(x, 10); ctx.lineTo(x, H-pad/2); ctx.stroke();
+    // small top tick
+    ctx.fillStyle = 'rgba(2,6,23,0.25)'; ctx.fillRect(x-2, 6, 4, 6);
+  }
+
+  // time labels
+  ctx.fillStyle='#0f172a'; ctx.font='11px ui-sans-serif';
+  for(let i=0;i<=6;i++){
+    const t = new Date(start + (end-start)*i/6);
+    const label = `${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`;
+    ctx.fillText(label, pad + (W-pad-10)*i/6 - 12, H-12);
+  }
+
+  // summary card
+  const idxs = getCurrentIndices(A,I,D,start,end);
+  renderSummaryCard(idxs);
+}
+
+function pan(h){ centerTs += h*3600*1000; draw(); }
+function nowCenter(){ centerTs = Date.now(); draw(); }
+
+window.addEventListener('load', init);
+</script>
+</body>
+</html>
