@@ -132,7 +132,7 @@
         </div>
 
         <div class="row">
-          <div class="chip">이번 용량</div>
+          <div class="chip">투여 용량</div>
           <div class="seg" id="unitSeg">
             <button type="button" data-u="mg" class="active" onclick="setUnit('mg')">mg</button>
             <button type="button" data-u="ml" onclick="setUnit('ml')">mL</button>
@@ -142,7 +142,7 @@
         </div>
 
         <div class="row">
-          <div class="chip">복용 시각</div>
+          <div class="chip">복용 시간</div>
           <input id="doseTime" type="datetime-local" />
           <button class="pill ok" onclick="addDose()">기록하기</button>
         </div>
@@ -156,9 +156,9 @@
     <div id="nextBar" class="nextbar" style="display:none">
       <b>마지막</b><span id="nb_last">—</span>· <b>경과</b><span id="nb_elapsed">—</span>
       <span class="kicker">|</span>
-      <span class="dot" style="background:var(--pink)"></span><span>아세 다음</span><b id="nb_apap">—</b>
+      <span class="dot" style="background:var(--pink)"></span><span>아세트 다음</span><b id="nb_apap">—</b>
       <span class="dot" style="background:var(--blue)"></span><span>이부 다음</span><b id="nb_ibu">—</b>
-      <span class="dot" style="background:#10b981"></span><span>덱시 다음</span><b id="nb_dex">—</b>
+      <span class="dot" style="background:#10b981"></span><span>덱시부 다음</span><b id="nb_dex">—</b>
     </div>
 
     <div class="row" style="justify-content:space-between;align-items:center">
