@@ -310,7 +310,7 @@ function addDose(){
   if(unit==='ml'){ const conc = getConcs()[active]; v = Math.round(v * conc); }
   else{ v = Math.round(v); }
   const t = new Date(document.getElementById('doseTime').value);
-  if(isNaN(t.getTime())){ alert('시각을 확인해주세요.'); return; }
+  if(isNaN(t.getTime())){ alert('시간을 확인해주세요.'); return; }
   arr.push({ts: t.toISOString(), drug: active, mg: v});
   s.log = arr; store.set(s);
   document.getElementById('doseVal').value=''; updateConversionHint();
