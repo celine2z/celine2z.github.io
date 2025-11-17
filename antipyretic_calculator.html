@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>아이 해열제 계산 · 기록 · 농도그래프 (PK-Enhanced_Final)</title>
-
+<title>아이 해열제 계산 · 기록 · 농도그래프 (fixed_final)</title>
 <style>
   :root{ --bg:#f6f7f9;--card:#ffffff;--ink:#0f172a;--muted:#64748b;--ring:#e5e7eb;
     --pink:#ff5a7a;--pinkBg:#ffe8ee; --blue:#4f67ff;--blueBg:#e9edff;
@@ -38,7 +37,7 @@
   .drug-ib{background:var(--blueBg);color:var(--blue)}
   .drug-dx{background:var(--greenBg);color:#069e75}
   .ok{background:#111827;color:#fff}
-  /* Unit toggle */
+    /* Unit toggle */
   .seg{display:inline-flex;border:1px solid #e5e7eb;border-radius:9px;overflow:hidden}
   .seg button{padding:6px 10px;border:0;background:#fff;color:#0f172a;cursor:pointer}
   .seg button.active{background:#0f172a;color:#fff}
@@ -49,7 +48,7 @@
   .chart-wrap{position:relative}
   canvas{width:100%;max-width:100%;height:34vh;background:#fff;border-radius:10px;display:block}
 
-  /* Summary (compact) */
+  /* Summary */
   .summary{display:flex;align-items:center;gap:10px;background:#ecfdf5;border:1px solid #bbf7d0;border-radius:12px;padding:8px;margin-top:8px}
   .summary.bad{background:#fef2f2;border-color:#fecaca}
   .summary.warn{background:#fffbeb;border-color:#fde68a}
@@ -57,9 +56,10 @@
   .badge.good{background:#d1fae5;color:#065f46}
   .badge.warn{background:#fef3c7;color:#92400e}
   .badge.bad{background:#fee2e2;color:#991b1b}
+
   .summary .title{font-size:15px;font-weight:800;margin-right:8px}
 
-  /* Donut */
+  /* Donut remaining */
   .donuts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
   @media (max-width:760px){ .donuts{grid-template-columns:1fr} }
   .donut-card{display:flex;align-items:center;gap:10px;border:1px solid #e5e7eb;border-radius:12px;padding:10px;background:#fff}
@@ -70,18 +70,179 @@
   .donut svg{transform:rotate(-90deg)}
   .donut .center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px}
 
+  /* History table */
+  table{width:100%;border-collapse:separate;border-spacing:0 6px}
+  thead th{font-size:11px;color:#64748b;text-align:left;padding:6px 8px;white-space:nowrap}
+  tbody tr{background:#ffffff;border:1px solid #e5e7eb}
+  tbody td{padding:8px 10px;vertical-align:middle}
+  tbody tr td:first-child{border-top-left-radius:8px;border-bottom-left-radius:8px}
+  tbody tr td:last-child{border-top-right-radius:8px;border-bottom-right-radius:8px}
+  td.right{text-align:right}
+  .tag{padding:2px 6px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}
+  .tag.ap{background:var(--pinkBg);color:var(--pink)}
+  .tag.ib{background:var(--blueBg);color:var(--blue)}
+  .tag.dx{background:var(--greenBg);color:#069e75}
+
   /* Next-inline bar */
   .nextbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px;background:#fafafa;border:1px solid #e5e7eb;border-radius:10px;padding:6px 8px;margin-bottom:8px}
-  .dot{display:inline-block;width:8px;height:8px;border-radius:999px;margin-right:4px}
+  .dot{display:inline-block;width:6px;height:6px;border-radius:999px;margin-right:4px}
 </style>
 </head>
-
 <body>
 <div class="wrap">
   <h1>아이 해열제 계산 · 기록 · 농도그래프</h1>
 
-  <!-- Body 영역 전체 동일 (삭제 X) -->
+  <div class="grid cols-2">
+    <div class="card">
+      <div class="section-title">기본 정보</div>
+      <div class="row">
+        <span class="chip">체중(kg)</span>
+        <input id="weight" type="number" step="0.1" min="3" max="80" />
+        <button id="saveWeight" class="pill ghost">저장</button>
+        <span id="weightHint" class="kicker"></span>
+      </div>
 
+      <div class="section-title" style="margin-top:4px">현용 현탁농도 (필요시만 변경)</div>
+      <div class="line">
+        <div class="label">아세트아미노펜</div>
+        <div class="inline-input"><input id="concAPAP" type="number" step="1" value="160"><span class="sep">mg /</span><input id="concAPAPml" type="number" step="0.1" value="5"><span class="sep">ml</span></div>
+      </div>
+      <div class="line">
+        <div class="label">이부프로펜</div>
+        <div class="inline-input"><input id="concIBU" type="number" step="1" value="100"><span class="sep">mg /</span><input id="concIBUml" type="number" step="0.1" value="5"><span class="sep">ml</span></div>
+      </div>
+      <div class="line">
+        <div class="label">덱시부프로펜</div>
+        <div class="inline-input"><input id="concDEX" type="number" step="1" value="60"><span class="sep">mg /</span><input id="concDEXml" type="number" step="0.1" value="5"><span class="sep">ml</span></div>
+      </div>
+
+      <div class="kicker" style="margin-top:2px">숫자를 바꾸면 자동 저장돼요.</div>
+    </div>
+        <div class="card">
+      <div class="row">
+        <button class="drug-btn drug-ap" onclick="setDose('APAP')">아세트아미노펜</button>
+        <button class="drug-btn drug-ib" onclick="setDose('IBU')">이부프로펜</button>
+        <button class="drug-btn drug-dx" onclick="setDose('DEX')">덱시부프로펜</button>
+      </div>
+
+      <div id="doseBox" style="margin-top:6px">
+        <div class="row">
+          <div class="chip">권장 1회 용량</div>
+          <div id="rangeText" class="big"></div>
+        </div>
+
+        <div class="row">
+          <div class="chip">투여 용량</div>
+          <div class="seg" id="unitSeg">
+            <button type="button" data-u="mg" class="active" onclick="setUnit('mg')">mg</button>
+            <button type="button" data-u="ml" onclick="setUnit('ml')">ml</button>
+          </div>
+          <input id="doseVal" type="number" step="1" placeholder="값 입력" />
+          <span id="doseConv" class="kicker"></span>
+        </div>
+
+        <div class="row">
+          <div class="chip">복용 시간</div>
+          <input id="doseTime" type="datetime-local" />
+          <button class="pill ok" onclick="addDose()">기록하기</button>
+        </div>
+
+        <div class="kicker" id="maxDaily"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div id="nextBar" class="nextbar" style="display:none">
+      <b>마지막 복용</b> <span id="nb_last">—</span> · <b>경과</b> <span id="nb_elapsed">—</span><br>
+
+      <span class="dot" style="background:#ff5a7a"></span>
+      <span>아세트 다음</span><b id="nb_apap">—</b>
+
+      <span class="dot" style="background:#4f67ff"></span>
+      <span>이부 다음</span><b id="nb_ibu">—</b>
+
+      <span class="dot" style="background:#10b981"></span>
+      <span>덱시부 다음</span><b id="nb_dex">—</b>
+    </div>
+
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <div class="toolbar">
+        <button class="pill ghost" onclick="pan(-2)">← 2h</button>
+        <button class="pill ghost" onclick="pan(-6)">← 6h</button>
+        <button class="pill ghost" onclick="nowCenter()">지금</button>
+        <button class="pill ghost" onclick="pan(6)">6h →</button>
+        <button class="pill ghost" onclick="pan(12)">12h →</button>
+
+        <select id="windowH" onchange="draw()">
+          <option value="12">창: 12h</option>
+          <option value="24" selected>창: 24h</option>
+          <option value="36">창: 36h</option>
+        </select>
+
+        <select id="viewMode" onchange="draw()">
+          <option value="overlay">개별 곡선</option>
+          <option value="stack">합산 지수</option>
+        </select>
+
+        <select id="effectBand" onchange="draw()">
+          <option value="0">효과권: 표시 안함</option>
+          <option value="0.25">효과권: 지수 ≥ 0.25</option>
+          <option value="0.33" selected>효과권: 지수 ≥ 0.33</option>
+          <option value="0.5">효과권: 지수 ≥ 0.50</option>
+        </select>
+
+        <select id="yMode" onchange="draw()">
+          <option value="fixed" selected>Y축: 고정</option>
+          <option value="auto">Y축: 자동</option>
+        </select>
+      </div>
+
+      <div class="kicker">Y축: <b>정규화 상대지수(0~1)</b></div>
+    </div>
+
+    <div class="chart-wrap">
+      <canvas id="chart"></canvas>
+    </div>
+
+    <div id="summaryCard" class="summary" style="display:none"></div>
+
+    <div class="row" style="margin-top:8px;justify-content:flex-end">
+      <button class="pill ghost" onclick="clearToday()">오늘 기록 삭제</button>
+      <button class="pill ghost" onclick="clearAll()">전체 초기화</button>
+    </div>
+
+    <div class="kicker">
+      모델: 단일 구획 + 1차 흡수(Bateman).  
+      곡선은 상대(정규화) 값이며, 수직 회색선은 현재시각.  
+      하늘색 영역은 ‘효과권’ 이상의 구간입니다.
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin:2px 0 6px">최근 24시간 복용 이력</h3>
+
+    <table id="logTbl">
+      <thead>
+        <tr>
+          <th>시각</th>
+          <th>약</th>
+          <th class="right">용량 (mg)</th>
+          <th class="right">ml</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <div id="dailyTotals" class="kicker"></div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin:2px 0 6px">오늘 더 먹을 수 있는 양</h3>
+    <div class="donuts" id="donutWrap"></div>
+  </div>
+</div>
 <script>
 /* ---------- Storage helpers ---------- */
 const store = {
@@ -89,120 +250,129 @@ const store = {
     try{
       const v = localStorage.getItem('antipyretic_v1');
       const obj = v ? JSON.parse(v) : {};
-      if (typeof obj !== 'object' || obj === null) return {};
+      if (!obj || typeof obj !== 'object') return { log: [] };
       if (!Array.isArray(obj.log)) obj.log = [];
       return obj;
-    }catch(e){ return { log: [] }; }
+    } catch(e){
+      return { log: [] };
+    }
   },
   set(d){
-    try{ localStorage.setItem('antipyretic_v1', JSON.stringify(d||{})); }catch(e){}
+    try{
+      localStorage.setItem('antipyretic_v1', JSON.stringify(d || {}));
+    } catch(e){}
   }
 };
 
-/* ---------- Drug constants (PK 강화 버전) ---------- */
-/*
- Ka, Ke (t1/2 기반), Tmax 보정 반영
-
- 아세트아미노펜(APAP)
-   - t1/2 ≈ 2.3h
-   - Ka ≈ 1.7/h (Tmax ≈ 0.8~1.2h 맞춤)
-   - Ke = ln2 / 2.3
-
- 이부프로펜(IBU)
-   - t1/2 ≈ 2.0h
-   - Ka ≈ 1.2/h (Tmax ≈ 1.2~1.5h)
-   - Ke = ln2 / 2.0
-
- 덱시부프로펜(DEX)
-   - t1/2 ≈ 1.8h
-   - Ka ≈ 1.6/h (Tmax ≈ 0.8h)
-   - Ke = ln2 / 1.8
-*/
+/* ---------- Drug constants ---------- */
 const DRUGS = {
-  APAP: {name:'아세트아미노펜', recMgKg:[10,15], maxDailyMgKgRange:[60,75],
-         Ka:1.7, Ke:Math.log(2)/2.3, color:'#ff5a7a', key:'APAP', tagClass:'ap'},
-  IBU:  {name:'이부프로펜', recMgKg:[5,10], maxDailyMgKgRange:[30,40],
-         Ka:1.2, Ke:Math.log(2)/2.0, color:'#4f67ff', key:'IBU', tagClass:'ib'},
-  DEX:  {name:'덱시부프로펜', recMgKg:[5,7], maxDailyMgKgRange:[20,30],
-         Ka:1.6, Ke:Math.log(2)/1.8, color:'#10b981', key:'DEX', tagClass:'dx'},
+  APAP: {name:'아세트아미노펜', tHalf:2.2, Ka:2.0, recMgKg:[10,15], maxDailyMgKgRange:[60,75], key:'APAP', color:'#ff5a7a', tagClass:'ap'},
+  IBU:  {name:'이부프로펜',      tHalf:2.0, Ka:1.5, recMgKg:[5,10],  maxDailyMgKgRange:[30,40], key:'IBU',  color:'#4f67ff', tagClass:'ib'},
+  DEX:  {name:'덱시부프로펜',    tHalf:2.2, Ka:1.5, recMgKg:[5,7],   maxDailyMgKgRange:[20,30], key:'DEX',  color:'#10b981', tagClass:'dx'}
 };
 
-/* ---------- Utilities ---------- */
-function safeNumber(x, fb=0){ const n=parseFloat(x); return isFinite(n)?n:fb; }
-function safeDiv(n,d,fb=0){ n=safeNumber(n,NaN); d=safeNumber(d,NaN); if(!isFinite(n)||!isFinite(d)||d<=0) return fb; return n/d; }
-function toLocalInputValue(d){ const z=new Date(d.getTime()-d.getTimezoneOffset()*60000); return z.toISOString().slice(0,16); }
-function fmt(d){ const p=n=>String(n).padStart(2,'0'); return `${d.getMonth()+1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`; }
+let active = 'APAP';
+let centerTs = Date.now();
+let unit = 'mg';
 
-/* ---------- Concentration getter ---------- */
+/* ---------- Utilities ---------- */
+function safeNumber(x, fallback=0){
+  const n = parseFloat(x);
+  return isFinite(n) ? n : fallback;
+}
+function safeDiv(n,d,fb=0){
+  n=safeNumber(n,NaN); d=safeNumber(d,NaN);
+  if(!isFinite(n)||!isFinite(d)||d<=0) return fb;
+  return n/d;
+}
+function toLocalInputValue(d){
+  const z = new Date(d.getTime() - d.getTimezoneOffset()*60000);
+  return z.toISOString().slice(0,16);
+}
+function fmt(d){
+  const p=n=>String(n).padStart(2,'0');
+  return `${d.getMonth()+1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+/* ---------- Concentrations (mg/ml) ---------- */
 function getConcs(){
   const s = store.get();
   return {
     APAP: safeDiv(s.concAPAP ?? 160, s.concAPAPml ?? 5, 32),
     IBU:  safeDiv(s.concIBU  ?? 100, s.concIBUml  ?? 5, 20),
-    DEX:  safeDiv(s.concDEX  ?? 60,  s.concDEXml  ?? 5, 12),
+    DEX:  safeDiv(s.concDEX  ?? 60,  s.concDEXml  ?? 5, 12)
   };
 }
-
-let active='APAP';
-let centerTs=Date.now();
-let unit='mg';
 
 /* ---------- Init ---------- */
 function init(){
   const s = store.get();
+
   document.getElementById('weight').value = s.weight ?? '';
   document.getElementById('saveWeight').onclick = ()=>{
-    const s2=store.get();
-    s2.weight = safeNumber(document.getElementById('weight').value,null);
+    const s2 = store.get();
+    s2.weight = safeNumber(document.getElementById('weight').value, null);
     store.set(s2);
-    refreshDoseBox(); renderLog(); draw(); renderDonuts(); renderNextBar();
+    refreshDoseBox(); renderLog(); renderDonuts(); draw(); renderNextBar();
   };
 
   ['APAP','IBU','DEX'].forEach(k=>{
-    const base = (k==='APAP'?'concAPAP':k==='IBU'?'concIBU':'concDEX');
-    const baseml = base+'ml';
-    document.getElementById(base).value = s[base] ?? document.getElementById(base).value;
-    document.getElementById(baseml).value = s[baseml] ?? document.getElementById(baseml).value;
-    document.getElementById(base).addEventListener('input', saveConcs);
-    document.getElementById(baseml).addEventListener('input', saveConcs);
+    const key = k==='APAP'?'concAPAP':k==='IBU'?'concIBU':'concDEX';
+    const keyml = key+'ml';
+    document.getElementById(key).value   = s[key]   ?? (k==='APAP'?160:k==='IBU'?100:60);
+    document.getElementById(keyml).value = s[keyml] ?? 5;
+
+    document.getElementById(key).addEventListener('input',saveConcs);
+    document.getElementById(keyml).addEventListener('input',saveConcs);
   });
 
   document.getElementById('doseTime').value = toLocalInputValue(new Date());
-  document.getElementById('doseVal').addEventListener('input', updateConversionHint);
+  document.getElementById('doseVal').addEventListener('input',updateConversionHint);
 
-  refreshDoseBox(); renderLog(); draw(); renderDonuts(); renderNextBar();
+  refreshDoseBox();
+  renderLog();
+  renderDonuts();
+  draw();
+  renderNextBar();
+
   window.addEventListener('resize', draw);
 }
 
 /* ---------- Unit toggle ---------- */
 function setUnit(u){
-  unit=u;
-  const seg=document.querySelectorAll('#unitSeg button');
-  seg.forEach(b=>b.classList.toggle('active', b.dataset.u===u));
-  document.getElementById('doseVal').value='';
+  unit = u;
+  document.querySelectorAll('#unitSeg button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.u===u);
+  });
+  document.getElementById('doseVal').value = '';
   updateConversionHint();
 }
 
 /* ---------- Conversion hint ---------- */
 function updateConversionHint(){
-  const v=safeNumber(document.getElementById('doseVal').value,NaN);
-  const concs=getConcs();
-  const conc = concs[active];
-  const el=document.getElementById('doseConv');
+  const v = safeNumber(document.getElementById('doseVal').value, NaN);
+  const conc = getConcs()[active] || 0;
+  const el = document.getElementById('doseConv');
   if(!isFinite(v)){ el.textContent=''; return; }
-  if(unit==='mg') el.textContent = `→ ${(v/(conc||1)).toFixed(1)} ml`;
-  else el.textContent = `→ ${(v*conc).toFixed(0)} mg`;
+
+  if(unit==='mg'){
+    el.textContent = `→ ${(v / (conc||1)).toFixed(1)} ml 예상`;
+  } else {
+    el.textContent = `→ ${(v * conc).toFixed(0)} mg 환산`;
+  }
 }
 
 /* ---------- Save concentrations ---------- */
 function saveConcs(){
-  const s=store.get();
+  const s = store.get();
   ['concAPAP','concAPAPml','concIBU','concIBUml','concDEX','concDEXml'].forEach(id=>{
     s[id] = safeNumber(document.getElementById(id).value, s[id] ?? null);
   });
   store.set(s);
-  refreshDoseBox(); renderLog(); draw(); renderDonuts();
+  refreshDoseBox(); renderLog(); renderDonuts(); draw();
+  updateConversionHint();
 }
+
 /* ---------- Drug selector ---------- */
 function setDose(k){
   active = k;
@@ -218,284 +388,194 @@ function refreshDoseBox(){
   const concs = getConcs();
 
   if(!w){
-    document.getElementById('rangeText').textContent = '체중 입력 필요';
-    document.getElementById('weightHint').textContent = '';
+    document.getElementById('rangeText').textContent='체중 입력 필요';
     return;
   }
 
-  const [mgMin, mgMax] = d.recMgKg;
-  const minMg = w * mgMin;
-  const maxMg = w * mgMax;
-  const mlPerMg = 1 / (concs[active]||1);
+  const [minMgKg,maxMgKg] = d.recMgKg;
+  const minMg = Math.round(w*minMgKg);
+  const maxMg = Math.round(w*maxMgKg);
+
+  const mlMin = (minMg/(concs[active]||1)).toFixed(1);
+  const mlMax = (maxMg/(concs[active]||1)).toFixed(1);
 
   document.getElementById('rangeText').textContent =
-    `${Math.round(minMg)}~${Math.round(maxMg)} mg (≈ ${(minMg*mlPerMg).toFixed(1)}~${(maxMg*mlPerMg).toFixed(1)} ml)`;
+    `${minMg}~${maxMg} mg (≈ ${mlMin}~${mlMax} ml)`;
 
-  const [maxDailyLo, maxDailyHi] = d.maxDailyMgKgRange;
+  const [lo,hi] = d.maxDailyMgKgRange;
   document.getElementById('maxDaily').innerHTML =
-    `24시간 최대: <b>${maxDailyLo}~${maxDailyHi} mg/kg</b>`;
-  document.getElementById('weightHint').textContent = '권장 범위 자동 계산 중';
+    `24시간 최대: <b>${lo}~${hi} mg/kg</b> (기관마다 차이)`;
 }
 
 /* ---------- Add dose ---------- */
 function addDose(){
-  const s = store.get();
-  const arr = Array.isArray(s.log) ? s.log : [];
-
   let v = safeNumber(document.getElementById('doseVal').value,NaN);
-  if(!isFinite(v)){ alert("용량을 입력해주세요."); return; }
+  if(!isFinite(v)){ alert('용량을 입력해주세요.'); return; }
 
-  if(unit === 'ml'){
-    const conc = getConcs()[active]||0;
-    v = Math.round(v * conc);
+  if(unit==='ml'){
+    v = Math.round(v * (getConcs()[active]||1));
   } else {
     v = Math.round(v);
   }
 
   const tStr = document.getElementById('doseTime').value;
-  const tMs = Date.parse(tStr);
-  if(!isFinite(tMs)){ alert("시간을 확인해주세요."); return; }
+  const t = Date.parse(tStr);
+  if(!isFinite(t)){ alert('시간을 확인해주세요.'); return; }
 
-  arr.push({ts:new Date(tMs).toISOString(), drug:active, mg:v});
-  s.log = arr;
+  const s = store.get();
+  s.log.push({ts:new Date(t).toISOString(), drug:active, mg:v});
   store.set(s);
 
   document.getElementById('doseVal').value='';
   updateConversionHint();
-  renderLog(); draw(); renderDonuts(); renderNextBar();
+
+  renderLog(); renderDonuts(); draw(); renderNextBar();
 }
 
-/* ---------- Log rendering ---------- */
+/* ---------- Render log ---------- */
 function renderLog(){
   const s = store.get();
-  const arr = Array.isArray(s.log) ? s.log : [];
-  const since24 = Date.now() - 24*3600*1000;
-
-  const rows = arr
-    .filter(x=>Date.parse(x.ts)>=since24)
-    .sort((a,b)=>Date.parse(b.ts)-Date.parse(a.ts));
+  const arr = s.log || [];
+  const since24 = Date.now()-24*3600*1000;
+  const rows = arr.filter(x=>Date.parse(x.ts)>=since24)
+                  .sort((a,b)=>Date.parse(b.ts)-Date.parse(a.ts));
 
   const tbody = document.querySelector('#logTbl tbody');
-  tbody.innerHTML = '';
+  tbody.innerHTML='';
 
-  const concs = getConcs();
-  const w = safeNumber(store.get().weight,0);
-  const totals = {APAP:0, IBU:0, DEX:0};
-
+  const conc = getConcs();
   rows.forEach(x=>{
-    totals[x.drug] += x.mg;
-    const ml = (x.mg/(concs[x.drug]||1)).toFixed(1);
-    const maxMg = w * DRUGS[x.drug].maxDailyMgKgRange[0];
-
+    const ml = (x.mg/(conc[x.drug]||1)).toFixed(1);
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>${fmt(new Date(Date.parse(x.ts)))}</td>
+      <td>${fmt(new Date(x.ts))}</td>
       <td><span class="tag ${DRUGS[x.drug].tagClass}">${DRUGS[x.drug].name}</span></td>
       <td class="right">${x.mg}</td>
       <td class="right">${ml}</td>
-      <td class="right">${Math.round(totals[x.drug])} / ${Math.round(maxMg||0)} mg</td>
-      <td><button class="pill ghost" onclick="del('${x.ts}')">삭제</button></td>`;
+      <td><button class="pill ghost" onclick="del('${x.ts}')">삭제</button></td>
+    `;
     tbody.appendChild(tr);
   });
 
+  let sumA=0,sumI=0,sumD=0;
+  rows.forEach(r=>{
+    if(r.drug==='APAP') sumA+=r.mg;
+    if(r.drug==='IBU')  sumI+=r.mg;
+    if(r.drug==='DEX')  sumD+=r.mg;
+  });
   document.getElementById('dailyTotals').innerHTML =
-    `최근 24시간 누계 — 아세트 <b>${totals.APAP}</b> mg, 이부 <b>${totals.IBU}</b> mg, 덱시부 <b>${totals.DEX}</b> mg`;
+    `최근 24시간 — 아세트 <b>${sumA}</b> mg, 이부 <b>${sumI}</b> mg, 덱시 <b>${sumD}</b> mg`;
 }
 
+/* ---------- Delete one ---------- */
 function del(ts){
   const s = store.get();
-  s.log = (s.log||[]).filter(x=>x.ts!==ts);
+  s.log = s.log.filter(x=>x.ts!==ts);
   store.set(s);
-  renderLog(); draw(); renderDonuts(); renderNextBar();
+  renderLog(); renderDonuts(); draw(); renderNextBar();
 }
 
-/* ---------- Clear ---------- */
+/* ---------- Clear today ---------- */
 function clearToday(){
   const s = store.get();
-  const start=new Date(); start.setHours(0,0,0,0);
-  s.log = (s.log||[]).filter(x=>Date.parse(x.ts)<start.getTime());
+  const start = new Date(); start.setHours(0,0,0,0);
+  s.log = s.log.filter(x=>Date.parse(x.ts) < start.getTime());
   store.set(s);
-  renderLog(); draw(); renderDonuts(); renderNextBar();
+  renderLog(); renderDonuts(); draw(); renderNextBar();
 }
+
+/* ---------- Clear all ---------- */
 function clearAll(){
-  if(!confirm('모든 기록을 삭제할까요?')) return;
-  const keep = store.get();
+  if(!confirm('정말 전체 초기화할까요?')) return;
+  const s = store.get();
   store.set({
-    weight:keep.weight,
-    concAPAP:keep.concAPAP, concAPAPml:keep.concAPAPml,
-    concIBU:keep.concIBU, concIBUml:keep.concIBUml,
-    concDEX:keep.concDEX, concDEXml:keep.concDEXml,
+    weight:s.weight,
+    concAPAP:s.concAPAP, concAPAPml:s.concAPAPml,
+    concIBU:s.concIBU,   concIBUml:s.concIBUml,
+    concDEX:s.concDEX,   concDEXml:s.concDEXml,
     log:[]
   });
-  renderLog(); draw(); renderDonuts(); renderNextBar();
+  renderLog(); renderDonuts(); draw(); renderNextBar();
 }
 
-/* ---------- Donut calculation ---------- */
-function donutSVG({size=62,stroke=8,percent=0.3,color='#0ea5e9',bg='#eef2ff'}){
-  const r = (size-stroke)/2;
-  const c = 2*Math.PI*r;
-  const p = Math.max(0,Math.min(1,percent));
-  const dash=`${p*c} ${c}`;
-  return `
-    <div class="donut">
-      <svg width="${size}" height="${size}">
-        <circle cx="${size/2}" cy="${size/2}" r="${r}"
-                stroke="${bg}" stroke-width="${stroke}" fill="none" />
-        <circle cx="${size/2}" cy="${size/2}" r="${r}"
-                stroke="${color}" stroke-width="${stroke}" fill="none"
-                stroke-dasharray="${dash}" stroke-linecap="round"/>
-      </svg>
-      <div class="center">${Math.round(p*100)}%</div>
-    </div>`;
-}
+/* ---------- PK model ---------- */
+function pkSumRaw(drugKey, t0,t1, stepMin){
+  const {log} = store.get();
+  const doses = log.filter(x=>x.drug===drugKey);
 
-function renderDonuts(){
-  const w = safeNumber(document.getElementById('weight').value,0);
-  const wrap = document.getElementById('donutWrap');
-  wrap.innerHTML='';
+  const d = DRUGS[drugKey];
+  const Ke = Math.log(2)/d.tHalf;
+  const Ka = d.Ka;
 
-  if(!w){
-    wrap.innerHTML='<div class="kicker" style="padding:4px 2px">체중을 입력하면 계산돼요.</div>';
-    return;
-  }
-
-  const s = store.get();
-  const arr = s.log||[];
-  const since24 = Date.now() - 24*3600*1000;
-  const in24 = arr.filter(x=>Date.parse(x.ts)>=since24);
-
-  const totals = {APAP:0, IBU:0, DEX:0};
-  in24.forEach(x=> totals[x.drug]+=x.mg);
-
-  const conc = getConcs();
-
-  [
-    {key:'APAP', color:'#ff5a7a'},
-    {key:'IBU', color:'#4f67ff'},
-    {key:'DEX', color:'#10b981'}
-  ].forEach(it=>{
-    const maxMg = w * DRUGS[it.key].maxDailyMgKgRange[0];
-    const used = totals[it.key];
-    const leftMg = Math.max(0, maxMg-used);
-    const leftml = leftMg/(conc[it.key]||1);
-    const p = Math.min(1, used/(maxMg||1));
-
-    const card=document.createElement('div');
-    card.className='donut-card';
-    card.innerHTML = `
-      ${donutSVG({percent:p,color:it.color,bg:'#eef2f7'})}
-      <div>
-        <div class="donut-label">${DRUGS[it.key].name}</div>
-        <div class="donut-sub">오늘 더 먹을 수 있는 양</div>
-        <div class="donut-val" style="color:${it.color}">
-          ${leftml.toFixed(1)} ml <span class="donut-sub">(≈ ${Math.round(leftMg)} mg)</span>
-        </div>
-      </div>`;
-    wrap.appendChild(card);
-  });
-}
-
-/* ---------- PK engine (Tmax 기반 개선형 Bateman) ---------- */
-/*
-  C(t) = (Dose * Ka / (Ka - Ke)) * (e^(-Ke t) - e^(-Ka t))
-  → 상대값(정규화)로 사용 (실제 농도 μg/mL 단위 X)
-*/
-function pkRaw(drugKey, t0, t1, stepMin){
-  const s = store.get();
-  const doses = (s.log||[]).filter(x=>x.drug===drugKey);
-
-  const {Ka, Ke} = DRUGS[drugKey];
-  const result=[];
+  const pts=[];
   for(let t=t0; t<=t1; t+=stepMin*60000){
     let C=0;
-    for(const d of doses){
-      const dt = (t - Date.parse(d.ts))/3600000; // h
+    doses.forEach(dd=>{
+      const dt = (t - Date.parse(dd.ts))/3600000;
       if(dt>0){
-        C += d.mg * (Ka/(Ka-Ke)) * (Math.exp(-Ke*dt) - Math.exp(-Ka*dt));
+        C += dd.mg * (Ka/(Ka-Ke)) * (Math.exp(-Ke*dt) - Math.exp(-Ka*dt));
       }
+    });
+    pts.push({t,C});
+  }
+  return pts;
+}
+
+function getGlobalMax(){
+  const start = Date.now()-24*3600*1000;
+  const end   = Date.now()+12*3600*1000;
+  let maxC=0;
+
+  ['APAP','IBU','DEX'].forEach(k=>{
+    pkSumRaw(k,start,end,6).forEach(p=>{ if(p.C>maxC) maxC=p.C; });
+  });
+
+  return maxC || 1;
+}
+
+function getSeries(start,end,stepMin,yMode){
+  const gmax = yMode==='fixed' ? getGlobalMax() : 0;
+
+  const norm = (k)=>{
+    const raw = pkSumRaw(k,start,end,stepMin);
+    let maxC=0;
+    if(yMode==='auto'){
+      raw.forEach(p=>{ if(p.C>maxC) maxC=p.C; });
+      maxC = maxC||1;
     }
-    result.push({t, C});
-  }
-  return result;
-}
-/* ---------- Window-normalized Series ---------- */
-function getSeries(start, end, stepMin, yMode){
-  function norm(list){
-    let max = 0;
-    list.forEach(p=>{ if(p.C > max) max = p.C; });
-    if(max <= 0) max = 1;
-    return list.map(p=>({t:p.t, y:p.C/max}));
-  }
+    const denom = yMode==='fixed'? gmax : maxC;
+    return raw.map(p=>({t:p.t, y:(denom? p.C/denom : 0)}));
+  };
+
   return {
-    A: norm(pkRaw('APAP',start,end,stepMin)),
-    I: norm(pkRaw('IBU', start,end,stepMin)),
-    D: norm(pkRaw('DEX', start,end,stepMin)),
+    A:norm('APAP'),
+    I:norm('IBU'),
+    D:norm('DEX'),
+    denom:(yMode==='fixed'? gmax : null)
   };
 }
 
-/* ---------- Current indices ---------- */
-function getIdx(series, start, end){
-  const now = Date.now();
-  const total = series.A.length;
-  const idx = Math.max(0, Math.min(total-1,
-          Math.round((now - start)/((end-start)/(total-1)))));
-  return {
-    now,
-    apap: series.A[idx].y,
-    ibu:  series.I[idx].y,
-    dex:  series.D[idx].y,
-    combo: Math.min(1,(series.A[idx].y + series.I[idx].y + series.D[idx].y)/3)
-  };
-}
-
-/* ---------- Summary card ---------- */
-function renderSummary(info){
-  const el = document.getElementById('summaryCard');
-  const band = parseFloat(document.getElementById('effectBand').value);
-  let grade = 'bad';
-  if(info.combo >= 0.5) grade='good';
-  else if(info.combo >= band) grade='warn';
-
-  const badge = grade==='good'?'충분':grade==='warn'?'경계':'낮음';
-  const badgeClass = grade==='good'?'good':grade==='warn'?'warn':'bad';
-
-  const d = new Date(info.now);
-  const hh = String(d.getHours()).padStart(2,'0');
-  const mm = String(d.getMinutes()).padStart(2,'0');
-
-  el.className = `summary ${grade}`;
-  el.style.display = 'flex';
-  el.innerHTML = `
-    <span class="badge ${badgeClass}">${badge}</span>
-    <div>
-      <div><span class="title">현재 효과 지수</span><b>${info.combo.toFixed(2)}</b> · ${hh}:${mm}</div>
-      <div class="kicker">아세 ${info.apap.toFixed(2)} · 이부 ${info.ibu.toFixed(2)} · 덱시 ${info.dex.toFixed(2)}</div>
-    </div>`;
-}
-
-/* ---------- Graph drawing ---------- */
+/* ---------- Draw graph ---------- */
 function draw(){
-  const canvas = document.getElementById('chart');
-  const ctx = canvas.getContext('2d');
+  const canvas=document.getElementById('chart');
+  const ctx=canvas.getContext('2d');
 
-  // iOS Safari canvas fix
-  const cssW = canvas.clientWidth;
-  const cssH = canvas.clientHeight;
-  canvas.width  = cssW || 360;
-  canvas.height = cssH || 240;
+  const W = canvas.clientWidth || 360;
+  const H = canvas.clientHeight || 240;
+  canvas.width=W; canvas.height=H;
+  ctx.clearRect(0,0,W,H);
 
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  const windowH = parseInt(document.getElementById('windowH').value);
-  const start = centerTs - windowH*3600*500;
-  const end   = centerTs + windowH*3600*500;
+  const windowH=parseInt(document.getElementById('windowH').value,10);
+  const start = centerTs - (windowH/2)*3600*1000;
+  const end   = centerTs + (windowH/2)*3600*1000;
   const stepMin = 6;
 
-  const series = getSeries(start,end,stepMin,'fixed');
+  const yMode = document.getElementById('yMode').value;
+  const s = getSeries(start,end,stepMin,yMode);
 
-  const padL=48, padR=8, padT=8, padB=28;
-  const H = canvas.height, W = canvas.width;
-  const xPos = t => padL+(W-padL-padR)*((t-start)/(end-start));
+  const padL=48, padR=8, padT=8, padB=26;
+
+  const xPos = t => padL + (W-padL-padR)*((t-start)/(end-start));
   const yPos = y => padT + (H-padT-padB)*(1-y);
 
   /* grid */
@@ -506,103 +586,236 @@ function draw(){
     ctx.moveTo(x,padT); ctx.lineTo(x,H-padB);
   }
   for(let j=0;j<=4;j++){
-    const y=padT+(H-padT-padB)*j/4;
+    const y=padT + (H-padT-padB)*j/4;
     ctx.moveTo(padL,y); ctx.lineTo(W-padR,y);
   }
   ctx.stroke();
 
   /* effect band */
-  const band = parseFloat(document.getElementById('effectBand').value);
+  const band=parseFloat(document.getElementById('effectBand').value||'0');
   if(band>0){
     ctx.fillStyle='rgba(14,165,233,0.12)';
-    ctx.fillRect(padL,yPos(1),W-padL-padR,yPos(band)-yPos(1));
+    ctx.fillRect(padL, yPos(1), W-padL-padR, yPos(band)-yPos(1));
+
+    ctx.fillStyle='#0ea5e9';
+    ctx.fillRect(W-150,12,10,10);
+    ctx.fillStyle='#0f172a';
+    ctx.fillText(`효과권 ≥ ${band}`, W-135,21);
   }
 
-  /* y axis labels */
+  /* y-axis */
   ctx.fillStyle='#64748b';
   ctx.font='11px sans-serif';
-  [0,0.25,0.5,0.75,1].forEach(v=> ctx.fillText(v, 8, yPos(v)+4));
+  [0,0.25,0.5,0.75,1].forEach(v=>{
+    ctx.fillText(v.toFixed(2), 8, yPos(v)+4);
+  });
 
-  /* draw curves */
-  const curves = [
-    {k:'A', color:'#ff5a7a', name:'아세트아미노펜'},
-    {k:'I', color:'#4f67ff', name:'이부프로펜'},
-    {k:'D', color:'#10b981', name:'덱시부프로펜'}
-  ];
+  /* curves */
   const mode = document.getElementById('viewMode').value;
 
   if(mode==='overlay'){
-    curves.forEach((c,idx)=>{
-      ctx.strokeStyle = c.color;
-      ctx.lineWidth = 2;
+    [
+      {data:s.A,color:'#ff5a7a',label:'아세트아미노펜'},
+      {data:s.I,color:'#4f67ff',label:'이부프로펜'},
+      {data:s.D,color:'#10b981',label:'덱시부프로펜'}
+    ].forEach((ds,idx)=>{
+      ctx.strokeStyle=ds.color;
+      ctx.lineWidth=2;
       ctx.beginPath();
-      series[c.k].forEach((p,i)=>{
+      ds.data.forEach((p,i)=>{
         const x=xPos(p.t), y=yPos(p.y);
         if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
       });
       ctx.stroke();
-      ctx.fillStyle=c.color;
-      ctx.fillRect(W-160,32+16*idx,10,10);
+
+      ctx.fillStyle=ds.color;
+      ctx.fillRect(W-150,34+16*idx,10,10);
       ctx.fillStyle='#0f172a';
-      ctx.fillText(c.name,W-145,40+16*idx);
+      ctx.fillText(ds.label, W-135,42+16*idx);
     });
+
   } else {
-    const N = series.A.map((p,i)=>({
-      t:p.t,
-      y: Math.min(1,(p.y + series.I[i].y + series.D[i].y)/3)
-    }));
+    const comb = s.A.map((p,i)=>{
+      return {
+        t:p.t,
+        y:Math.min(1,(p.y + (s.I[i]?.y||0) + (s.D[i]?.y||0))/3)
+      };
+    });
+
     ctx.strokeStyle='#111827';
     ctx.lineWidth=2;
     ctx.beginPath();
-    N.forEach((p,i)=>{ const x=xPos(p.t), y=yPos(p.y); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); });
+    comb.forEach((p,i)=>{
+      const x=xPos(p.t), y=yPos(p.y);
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    });
     ctx.stroke();
+
+    ctx.fillStyle='#111827';
+    ctx.fillRect(W-150,34,10,10);
+    ctx.fillStyle='#0f172a';
+    ctx.fillText('합산 효과 지수', W-135,42);
   }
 
-  /* now line */
-  const now = Date.now();
+  /* now vertical line */
+  const now=Date.now();
   if(now>=start && now<=end){
     const x=xPos(now);
     ctx.strokeStyle='rgba(2,6,23,0.25)';
+    ctx.lineWidth=2;
     ctx.beginPath();
     ctx.moveTo(x,padT); ctx.lineTo(x,H-padB);
     ctx.stroke();
   }
 
-  /* x axis labels */
+  /* x-axis labels */
   ctx.fillStyle='#0f172a';
   ctx.font='11px sans-serif';
   for(let i=0;i<=6;i++){
     const t=new Date(start+(end-start)*i/6);
-    const hh = String(t.getHours()).padStart(2,'0');
-    const mm = String(t.getMinutes()).padStart(2,'0');
-    ctx.fillText(`${hh}:${mm}`, padL+(W-padL-padR)*i/6 - 14, H-10);
+    ctx.fillText(
+      `${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`,
+      xPos(t.getTime())-12,
+      H-8
+    );
   }
 
-  /* summary */
-  const info = getIdx(series,start,end);
-  renderSummary(info);
+  /* summary card */
+  const idx = getCurrentPoint(s,start,end);
+  renderSummary(idx);
 }
 
-/* ---------- Pan / recenter ---------- */
+function getCurrentPoint(s,start,end){
+  const now=Date.now();
+  const arrLen=s.A.length;
+  const idx=Math.min(arrLen-1, Math.max(0, Math.round((now-start)/(end-start)*(arrLen-1))));
+  return {
+    now,
+    apap: s.A[idx]?.y||0,
+    ibu:  s.I[idx]?.y||0,
+    dex:  s.D[idx]?.y||0,
+    combo: Math.min(1, ((s.A[idx]?.y||0)+(s.I[idx]?.y||0)+(s.D[idx]?.y||0))/3)
+  };
+}
+
+function renderSummary(pt){
+  const el=document.getElementById('summaryCard');
+  el.style.display='flex';
+
+  const band=parseFloat(document.getElementById('effectBand').value||'0.33');
+
+  let grade='bad';
+  if(pt.combo>=0.5) grade='good';
+  else if(pt.combo>=band) grade='warn';
+
+  const gradeTxt = grade==='good'?'충분':grade==='warn'?'경계':'낮음';
+  const badgeClass = grade==='good'?'good':grade==='warn'?'warn':'bad';
+
+  const t=new Date(pt.now);
+  const hh = String(t.getHours()).padStart(2,'0');
+  const mm = String(t.getMinutes()).padStart(2,'0');
+
+  el.className=`summary ${grade}`;
+  el.innerHTML = `
+    <span class="badge ${badgeClass}">${gradeTxt}</span>
+    <div>
+      <div><span class="title">현재 효과 지수</span><b>${pt.combo.toFixed(2)}</b> · ${hh}:${mm}</div>
+      <div class="kicker">
+        아세 ${pt.apap.toFixed(2)} · 이부 ${pt.ibu.toFixed(2)} · 덱시 ${pt.dex.toFixed(2)}
+      </div>
+    </div>
+  `;
+}
+
+/* ---------- Donut ---------- */
+function donutSVG({percent,color,bg}){
+  const size=62, stroke=8;
+  const r=(size-stroke)/2;
+  const c=2*Math.PI*r;
+
+  const p=Math.min(1,Math.max(0,percent));
+  const dash=`${p*c} ${c}`;
+
+  return `
+    <div class="donut">
+      <svg width="${size}" height="${size}">
+        <circle cx="31" cy="31" r="${r}" stroke="${bg}" stroke-width="${stroke}" fill="none"/>
+        <circle cx="31" cy="31" r="${r}" stroke="${color}" stroke-width="${stroke}" fill="none"
+          stroke-dasharray="${dash}" stroke-linecap="round"/>
+      </svg>
+      <div class="center">${Math.round(p*100)}%</div>
+    </div>
+  `;
+}
+
+function renderDonuts(){
+  const w = safeNumber(document.getElementById('weight').value,0);
+  const wrap = document.getElementById('donutWrap');
+  wrap.innerHTML='';
+
+  if(!w){
+    wrap.innerHTML='<div class="kicker">체중을 입력하세요.</div>';
+    return;
+  }
+
+  const {log} = store.get();
+  const since24 = Date.now()-24*3600*1000;
+  const rows = log.filter(x=>Date.parse(x.ts)>=since24);
+
+  const sums={APAP:0,IBU:0,DEX:0};
+  rows.forEach(r=>{ sums[r.drug]+=r.mg; });
+
+  const conc=getConcs();
+
+  [
+    {key:'APAP',color:'#ff5a7a'},
+    {key:'IBU', color:'#4f67ff'},
+    {key:'DEX', color:'#10b981'}
+  ].forEach(it=>{
+    const maxMg = w * DRUGS[it.key].maxDailyMgKgRange[0];
+    const used = sums[it.key];
+    const leftMg = Math.max(0, maxMg - used);
+    const leftMl = leftMg / (conc[it.key]||1);
+
+    const card = document.createElement('div');
+    card.className='donut-card';
+    card.innerHTML = `
+      ${donutSVG({percent:(used/maxMg),color:it.color,bg:'#eef2f7'})}
+      <div>
+        <div class="donut-label">${DRUGS[it.key].name}</div>
+        <div class="donut-sub">오늘 더 먹을 수 있는 양</div>
+        <div class="donut-val" style="color:${it.color}">
+          ${leftMl.toFixed(1)} ml <span class="donut-sub">(≈ ${Math.round(leftMg)} mg)</span>
+        </div>
+      </div>
+    `;
+    wrap.appendChild(card);
+  });
+}
+
+/* ---------- Timeline pan ---------- */
 function pan(h){ centerTs += h*3600*1000; draw(); }
 function nowCenter(){ centerTs = Date.now(); draw(); }
 
-/* ---------- Next Bar (복용 가능 시간) ---------- */
+/* ---------- Next inline bar ---------- */
 function renderNextBar(){
   const bar=document.getElementById('nextBar');
+
   const s=store.get();
   const arr=(s.log||[]).slice().sort((a,b)=>Date.parse(b.ts)-Date.parse(a.ts));
-  if(!arr.length){ bar.style.display='none'; return; }
+
+  if(arr.length===0){ bar.style.display='none'; return; }
+
   bar.style.display='flex';
 
-  const last = arr[0];
-  const lastDrug = last.drug;
-  const lastTime = Date.parse(last.ts);
-  const now = Date.now();
+  const last=arr[0];
+  const lastDrug=last.drug;
+  const lastTime=Date.parse(last.ts);
+  const now=Date.now();
 
   function fmtHM(ms){
     const m=Math.floor(ms/60000);
-    if (m<60) return `${m}분`;
+    if(m<60) return `${m}분`;
     const h=Math.floor(m/60), r=m%60;
     return `${h}시간 ${r}분`;
   }
@@ -612,27 +825,26 @@ function renderNextBar(){
 
   /* 교차 복용 규칙 */
   const rule = {
-    APAP: {APAP:4, IBU:2, DEX:2},
-    IBU:  {APAP:2, IBU:6, DEX:6},
-    DEX:  {APAP:2, IBU:6, DEX:6}
+    APAP:{APAP:4, IBU:2, DEX:2},
+    IBU: {APAP:2, IBU:6, DEX:6},
+    DEX: {APAP:2, IBU:6, DEX:6}
   };
   const r = rule[lastDrug];
 
-  function allowTime(drug){
-    const h = r[drug];
-    const t = lastTime + h*3600*1000;
-    return (now>=t) ? '지금' : fmt(new Date(t));
+  function label(drug){
+    const h=r[drug];
+    const allow = lastTime + h*3600*1000;
+    if(now>=allow) return '지금';
+    return fmt(new Date(allow));
   }
 
-  document.getElementById('nb_apap').textContent = allowTime('APAP');
-  document.getElementById('nb_ibu').textContent  = allowTime('IBU');
-  document.getElementById('nb_dex').textContent  = allowTime('DEX');
+  document.getElementById('nb_apap').textContent = label('APAP');
+  document.getElementById('nb_ibu').textContent  = label('IBU');
+  document.getElementById('nb_dex').textContent  = label('DEX');
 }
 
-/* ---------- INIT ---------- */
-window.addEventListener('load',()=>{
-  init();
-});
+window.addEventListener('load', init);
 </script>
+
 </body>
 </html>
