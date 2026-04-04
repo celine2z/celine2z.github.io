@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>antipyretic_calculator</title>
+<style>
+  :root{
+    --bg:#f6f7f9;--card:#ffffff;--ink:#0f172a;--muted:#64748b;--ring:#e5e7eb;
+    --pink:#ff5a7a;--pinkBg:#ffe8ee; --blue:#4f67ff;--blueBg:#e9edff;
+    --green:#10b981;--greenBg:#e6fff6;
+  }
+  html,body{height:100%}
+  body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;background:var(--bg);color:var(--ink);font-size:13px}
+  .wrap{max-width:920px;margin:0 auto;padding:8px}
+  h1{font-size:17px;margin:2px 0 8px}
+  .grid{display:grid;gap:8px}
+  .grid.cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+  @media (max-width:760px){.grid.cols-2{grid-template-columns:1fr}}
+  .card{background:var(--card);border-radius:12px;box-shadow:0 1px 2px rgba(0,0,0,.05);padding:8px}
+  .row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+  .section-title{font-size:12px;color:var(--muted);margin:0 0 6px}
+  .chip{font-size:11px;padding:2px 6px;border-radius:999px;background:#f1f5f9;color:#0f172a}
+  .pill{border:none;border-radius:10px;padding:7px 9px;background:#0ea5e9;color:#fff;cursor:pointer;font-size:13px}
+  .ghost{background:#f1f5f9;color:#0f172a}
+  .ghost:hover{background:#e2e8f0}
+  .kicker{font-size:11px;color:var(--muted)}
+  .big{font-size:17px;font-weight:700}
+  .line{display:flex;align-items:center;gap:8px;padding:5px 7px;border:1px solid var(--ring);border-radius:10px;background:#fafbff}
+  .line .label{min-width:92px;font-weight:700}
+  .inline-input{display:flex;align-items:center;gap:4px;background:#fff;border:1px solid #e5e7eb;border-radius:9px;padding:2px 4px}
+  .inline-input input{width:38px;border:none;outline:none;font:inherit;background:transparent;text-align:right}
+  .inline-input .sep{opacity:.6}
+  input[type="number"],input[type="datetime-local"]{font:inherit;border:1px solid #e5e7eb;border-radius:9px;padding:6px 7px;background:#fff}
+  input[type="number"]{width:78px}
+  .drug-btn{border:none;border-radius:12px;padding:10px 14px;cursor:pointer;font-weight:700;font-size:14px;min-height:42px}
+  .drug-ap{background:var(--pinkBg);color:var(--pink)}
+  .drug-ib{background:var(--blueBg);color:var(--blue)}
+  .drug-dx{background:var(--greenBg);color:#069e75}
+  .ok{background:#111827;color:#fff}
+  .seg{display:inline-flex;border:1px solid #e5e7eb;border-radius:9px;overflow:hidden}
+  .seg button{padding:6px 10px;border:0;background:#fff;color:#0f172a;cursor:pointer}
+  .seg button.active{background:#0f172a;color:#fff}
+  .toolbar{display:flex;gap:6px;flex-wrap:wrap}
+  .toolbar select{border:1px solid #e5e7eb;border-radius:9px;padding:6px 8px;background:#fff;font:inherit}
+  .chart-wrap{position:relative}
+  canvas{width:100%;max-width:100%;height:34vh;background:#fff;border-radius:10px;display:block}
+  .summary{display:flex;align-items:center;gap:10px;background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:10px;margin-top:8px}
+  .summary.good{background:#eff6ff;border-color:#bfdbfe}
+  .summary.warn{background:#fefce8;border-color:#fde68a}
+  .badge{padding:4px 10px;border-radius:999px;font-weight:700;font-size:12px}
+  .badge.good{background:#60a5fa;color:#fff}
+  .badge.warn{background:#f59e0b;color:#fff}
+  .badge.bad{background:#86efac;color:#166534}
+  .donuts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  @media (max-width:760px){ .donuts{grid-template-columns:1fr} }
+  .donut-card{display:flex;align-items:center;gap:10px;border:1px solid #e5e7eb;border-radius:12px;padding:10px;background:#fff}
+  .donut-label{font-weight:800}
+  .donut-sub{font-size:12px;color:#64748b}
+  .donut-val{font-size:16px;font-weight:800}
+  .donut{width:62px;height:62px;position:relative}
+  .donut svg{transform:rotate(-90deg)}
+  .donut .center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px}
+  table{width:100%;border-collapse:separate;border-spacing:0 6px;table-layout:fixed}
+  thead th, tbody td{padding:8px 10px;text-align:left}
+  thead th{font-size:11px;color:#64748b;white-space:nowrap}
+  #logTbl th:nth-child(1), #logTbl td:nth-child(1){width:30%}
+  #logTbl th:nth-child(2), #logTbl td:nth-child(2){width:28%}
+  #logTbl th:nth-child(3), #logTbl td:nth-child(3){width:18%; text-align:right}
+  #logTbl th:nth-child(4), #logTbl td:nth-child(4){width:14%; text-align:right}
+  #logTbl th:nth-child(5), #logTbl td:nth-child(5){width:10%; text-align:right}
+  tbody tr{background:#ffffff;border:1px solid #e5e7eb}
+  tbody td{vertical-align:middle}
+  tbody tr td:first-child{border-top-left-radius:8px;border-bottom-left-radius:8px}
+  tbody tr td:last-child{border-top-right-radius:8px;border-bottom-right-radius:8px}
+  td.right{text-align:right}
+  .tag{padding:2px 6px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}
+  .tag.ap{background:var(--pinkBg);color:var(--pink)}
+  .tag.ib{background:var(--blueBg);color:var(--blue)}
+  .tag.dx{background:var(--greenBg);color:#069e75}
+  .nextbar{display:flex;flex-direction:column;gap:6px;font-size:12px;background:#fafafa;border:1px solid #e5e7eb;border-radius:10px;padding:10px 12px;margin-bottom:8px}
+  .nextbar .line1{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .nextbar .line2{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .nextbar .item{display:flex;align-items:center;gap:4px}
+  .dot{display:inline-block;width:7px;height:7px;border-radius:50%}
+  .graph-selector{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:8px}
+  .gbtn{border:none;border-radius:12px;padding:10px 14px;font-weight:700;font-size:13px;cursor:pointer;background:#eef2f7;color:#334155}
+  .gbtn.active-ap{background:var(--pink);color:#fff}
+  .gbtn.active-ib{background:#a855f7;color:#fff}
+  .gbtn.active-dx{background:#60a5fa;color:#fff}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>아이 해열제 계산 · 기록 · 농도그래프</h1>
+
+  <div class="grid cols-2">
+    <div class="card">
+      <div class="section-title">기본 정보</div>
+      <div class="row">
+        <span class="chip">체중(kg)</span>
+        <input id="weight" type="number" step="0.1" min="3" max="80" />
+        <button id="saveWeight" class="pill ghost">저장</button>
+      </div>
+      <div class="section-title" style="margin-top:4px">현용 현탁농도 (필요시만 변경)</div>
+      <div class="line"><div class="label">아세트아미노펜</div><div class="inline-input"><input id="concAPAP" type="number" step="1" value="160"><span class="sep">mg /</span><input id="concAPAPml" type="number" step="0.1" value="5"><span class="sep">ml</span></div></div>
+      <div class="line"><div class="label">이부프로펜</div><div class="inline-input"><input id="concIBU" type="number" step="1" value="100"><span class="sep">mg /</span><input id="concIBUml" type="number" step="0.1" value="5"><span class="sep">ml</span></div></div>
+      <div class="line"><div class="label">덱시부프로펜</div><div class="inline-input"><input id="concDEX" type="number" step="1" value="60"><span class="sep">mg /</span><input id="concDEXml" type="number" step="0.1" value="5"><span class="sep">ml</span></div></div>
+      <div class="kicker" style="margin-top:2px">숫자를 바꾸면 자동 저장돼요.</div>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <button class="drug-btn drug-ap" onclick="setDose('APAP')">아세트아미노펜</button>
+        <button class="drug-btn drug-ib" onclick="setDose('IBU')">이부프로펜</button>
+        <button class="drug-btn drug-dx" onclick="setDose('DEX')">덱시부프로펜</button>
+      </div>
+      <div id="doseBox" style="margin-top:6px">
+        <div class="row"><div class="chip">권장 1회 용량</div><div id="rangeText" class="big"></div></div>
+        <div class="row">
+          <div class="chip">투여 용량</div>
+          <div class="seg" id="unitSeg">
+            <button type="button" data-u="mg" class="active" onclick="setUnit('mg')">mg</button>
+            <button type="button" data-u="ml" onclick="setUnit('ml')">ml</button>
+          </div>
+          <input id="doseVal" type="number" step="0.1" placeholder="값 입력" />
+          <span id="doseConv" class="kicker"></span>
+        </div>
+        <div class="row"><div class="chip">복용 시간</div><input id="doseTime" type="datetime-local" /><button class="pill ok" onclick="addDose()">기록하기</button></div>
+        <div class="kicker" id="maxDaily"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div id="nextBar" class="nextbar" style="display:none">
+      <div class="line1"><b>마지막 복용</b><span id="nb_last">—</span><span>/</span><b>경과</b><span id="nb_elapsed">—</span></div>
+      <div class="line2">
+        <b>다음 복용 가능 시간</b>
+        <span class="item"><span class="dot" style="background:#ff5a7a"></span>아세트 <b id="nb_apap">—</b></span>
+        <span class="item"><span class="dot" style="background:#4f67ff"></span><span class="dot" style="background:#10b981"></span>이부·덱시부 <b id="nb_ibudex">—</b></span>
+      </div>
+    </div>
+
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <div class="toolbar">
+        <button class="pill ghost" onclick="pan(-2)">← 2h</button>
+        <button class="pill ghost" onclick="pan(-6)">← 6h</button>
+        <button class="pill ghost" onclick="nowCenter()">지금</button>
+        <button class="pill ghost" onclick="pan(6)">6h →</button>
+        <button class="pill ghost" onclick="pan(12)">12h →</button>
+        <select id="windowH" onchange="draw()"><option value="12">창: 12h</option><option value="24" selected>창: 24h</option><option value="36">창: 36h</option></select>
+        <select id="viewMode" onchange="draw()"><option value="overlay">개별 곡선</option><option value="stack">합산 지수</option></select>
+      </div>
+      <div class="kicker">Y축: <b>실제 농도 (μg/mL)</b></div>
+    </div>
+
+    <div class="chart-wrap"><canvas id="chart"></canvas></div>
+    <div id="summaryCard" class="summary" style="display:none"></div>
+    <div id="eachConcCard" class="card" style="margin-top:8px;padding:10px;display:none"><div class="kicker" style="font-size:12px;margin-bottom:4px">현재 개별 농도</div><div id="eachConcText" style="font-weight:700"></div></div>
+    <div class="graph-selector">
+      <button id="gbtnAPAP" class="gbtn" onclick="setGraphDrug('APAP')">● 아세트아미노펜</button>
+      <button id="gbtnIBU" class="gbtn" onclick="setGraphDrug('IBU')">● 이부프로펜</button>
+      <button id="gbtnDEX" class="gbtn" onclick="setGraphDrug('DEX')">● 덱시부프로펜</button>
+    </div>
+
+    <div class="row" style="margin-top:8px;justify-content:flex-end">
+      <button class="pill ghost" onclick="clearToday()">오늘 기록 삭제</button>
+      <button class="pill ghost" onclick="clearAll()">전체 초기화</button>
+    </div>
+    <div class="kicker">그래프 아래 버튼은 농도 보기용이에요. 위 약 선택 버튼은 복용 기록용입니다.</div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin:2px 0 6px">최근 24시간 복용 이력</h3>
+    <table id="logTbl">
+      <thead><tr><th>시각</th><th>약</th><th class="right">용량 (mg)</th><th class="right">용량 (ml)</th><th></th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <div id="dailyTotals" class="kicker"></div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin:2px 0 6px">오늘 더 먹을 수 있는 양</h3>
+    <div class="donuts" id="donutWrap"></div>
+  </div>
+</div>
+
+<script>
+const store={get(){try{const v=localStorage.getItem('antipyretic_v1');const obj=v?JSON.parse(v):{};if(!obj||typeof obj!=='object')return{log:[]};if(!Array.isArray(obj.log))obj.log=[];return obj;}catch(e){return{log:[]}}},set(d){try{localStorage.setItem('antipyretic_v1',JSON.stringify(d||{}))}catch(e){}}};
+const DRUGS={
+  APAP:{name:'아세트아미노펜', recMgKg:[10,15], maxDailyMgKgRange:[60,75], key:'APAP', color:'#ff5a7a', tagClass:'ap', therapy:[10,25], F:0.88, VdLkg:0.95, tHalf:2.2, Ka:2.0},
+  IBU:{name:'이부프로펜', recMgKg:[5,10], maxDailyMgKgRange:[30,40], key:'IBU', color:'#4f67ff', tagClass:'ib', therapy:[15,30], F:0.80, VdLkg:0.14, tHalf:2.0, Ka:1.5},
+  DEX:{name:'덱시부프로펜', recMgKg:[5,7], maxDailyMgKgRange:[20,30], key:'DEX', color:'#10b981', tagClass:'dx', therapy:[15,30], F:0.80, VdLkg:0.16, tHalf:2.2, Ka:1.5}
+};
+let active='APAP', centerTs=Date.now(), unit='mg', graphDrug='APAP';
+function safeNumber(x,fallback=0){const n=parseFloat(x);return isFinite(n)?n:fallback}
+function safeDiv(n,d,fb=0){n=safeNumber(n,NaN);d=safeNumber(d,NaN);if(!isFinite(n)||!isFinite(d)||d<=0)return fb;return n/d}
+function toLocalInputValue(d){const z=new Date(d.getTime()-d.getTimezoneOffset()*60000);return z.toISOString().slice(0,16)}
+function fmt(d){const p=n=>String(n).padStart(2,'0');return `${d.getMonth()+1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`}
+function getConcs(){const s=store.get();return{APAP:safeDiv(s.concAPAP??160,s.concAPAPml??5,32),IBU:safeDiv(s.concIBU??100,s.concIBUml??5,20),DEX:safeDiv(s.concDEX??60,s.concDEXml??5,12)}}
+function init(){
+  const s=store.get();
+  document.getElementById('weight').value=s.weight??'';
+  document.getElementById('saveWeight').onclick=()=>{const s2=store.get();s2.weight=safeNumber(document.getElementById('weight').value,null);store.set(s2);refreshDoseBox();renderLog();draw();renderDonuts();renderNextBar();};
+  ['APAP','IBU','DEX'].forEach(k=>{
+    const key=k==='APAP'?'concAPAP':k==='IBU'?'concIBU':'concDEX'; const keyml=key+'ml';
+    document.getElementById(key).value=s[key]??(k==='APAP'?160:k==='IBU'?100:60);
+    document.getElementById(keyml).value=s[keyml]??5;
+    document.getElementById(key).addEventListener('input',saveConcs);
+    document.getElementById(keyml).addEventListener('input',saveConcs);
+  });
+  document.getElementById('doseTime').value=toLocalInputValue(new Date());
+  document.getElementById('doseVal').addEventListener('input',updateConversionHint);
+  refreshDoseBox();renderLog();renderDonuts();updateGraphButtons();draw();renderNextBar();
+  window.addEventListener('resize',draw);
+}
+function setUnit(u){unit=u;document.querySelectorAll('#unitSeg button').forEach(b=>b.classList.toggle('active',b.dataset.u===u));document.getElementById('doseVal').value='';updateConversionHint();}
+function updateConversionHint(){const v=safeNumber(document.getElementById('doseVal').value,NaN);const conc=getConcs()[active]||0;const el=document.getElementById('doseConv');if(!isFinite(v)){el.textContent='';return;}if(unit==='mg')el.textContent=`→ ${(v/(conc||1)).toFixed(1)} ml 예상`;else el.textContent=`→ ${(v*conc).toFixed(0)} mg 환산`;}
+function saveConcs(){const s=store.get();['concAPAP','concAPAPml','concIBU','concIBUml','concDEX','concDEXml'].forEach(id=>{s[id]=safeNumber(document.getElementById(id).value,s[id]??null)});store.set(s);refreshDoseBox();renderLog();renderDonuts();draw();updateConversionHint();}
+function setDose(k){active=k;document.getElementById('doseTime').value=toLocalInputValue(new Date());refreshDoseBox();updateConversionHint();}
+function setGraphDrug(k){graphDrug=k;updateGraphButtons();draw();}
+function updateGraphButtons(){['APAP','IBU','DEX'].forEach(k=>{const el=document.getElementById('gbtn'+k);el.className='gbtn';if(k===graphDrug)el.classList.add(k==='APAP'?'active-ap':k==='IBU'?'active-ib':'active-dx');});}
+function refreshDoseBox(){
+  const w=safeNumber(document.getElementById('weight').value,0); const d=DRUGS[active], concs=getConcs();
+  if(!w){document.getElementById('rangeText').textContent='체중 입력 필요';return;}
+  const [minMgKg,maxMgKg]=d.recMgKg, minMg=Math.round(w*minMgKg), maxMg=Math.round(w*maxMgKg);
+  const mlMin=(minMg/(concs[active]||1)).toFixed(1), mlMax=(maxMg/(concs[active]||1)).toFixed(1);
+  document.getElementById('rangeText').textContent=`${minMg}~${maxMg} mg (≈ ${mlMin}~${mlMax} ml)`;
+  const [lo,hi]=d.maxDailyMgKgRange;
+  document.getElementById('maxDaily').innerHTML=`24시간 최대: <b>${lo}~${hi} mg/kg</b> (기관마다 차이)`;
+}
+function addDose(){
+  let v=safeNumber(document.getElementById('doseVal').value,NaN); if(!isFinite(v)){alert('용량을 입력해주세요.');return;}
+  if(unit==='ml') v=Math.round(v*(getConcs()[active]||1)); else v=Math.round(v);
+  const t=Date.parse(document.getElementById('doseTime').value); if(!isFinite(t)){alert('시간을 확인해주세요.');return;}
+  const s=store.get(); s.log.push({ts:new Date(t).toISOString(),drug:active,mg:v}); store.set(s);
+  document.getElementById('doseVal').value=''; updateConversionHint(); renderLog(); renderDonuts(); draw(); renderNextBar();
+}
+function renderLog(){
+  const s=store.get(), arr=s.log||[], since24=Date.now()-24*3600*1000;
+  const rows=arr.filter(x=>Date.parse(x.ts)>=since24).sort((a,b)=>Date.parse(b.ts)-Date.parse(a.ts));
+  const tbody=document.querySelector('#logTbl tbody'); tbody.innerHTML='';
+  const conc=getConcs();
+  rows.forEach(x=>{const ml=(x.mg/(conc[x.drug]||1)).toFixed(1); const tr=document.createElement('tr'); tr.innerHTML=`<td>${fmt(new Date(x.ts))}</td><td><span class="tag ${DRUGS[x.drug].tagClass}">${DRUGS[x.drug].name}</span></td><td class="right">${x.mg}</td><td class="right">${ml}</td><td><button class="pill ghost" onclick="del('${x.ts}')">삭제</button></td>`; tbody.appendChild(tr);});
+  let sumA=0,sumI=0,sumD=0; rows.forEach(r=>{if(r.drug==='APAP')sumA+=r.mg;if(r.drug==='IBU')sumI+=r.mg;if(r.drug==='DEX')sumD+=r.mg;});
+  document.getElementById('dailyTotals').innerHTML=`최근 24시간 — 아세트 <b>${sumA}</b> mg, 이부 <b>${sumI}</b> mg, 덱시 <b>${sumD}</b> mg`;
+}
+function del(ts){const s=store.get(); s.log=s.log.filter(x=>x.ts!==ts); store.set(s); renderLog(); renderDonuts(); draw(); renderNextBar();}
+function clearToday(){const s=store.get(); const start=new Date(); start.setHours(0,0,0,0); s.log=s.log.filter(x=>Date.parse(x.ts)<start.getTime()); store.set(s); renderLog(); renderDonuts(); draw(); renderNextBar();}
+function clearAll(){if(!confirm('정말 전체 초기화할까요?'))return; const s=store.get(); store.set({weight:s.weight,concAPAP:s.concAPAP,concAPAPml:s.concAPAPml,concIBU:s.concIBU,concIBUml:s.concIBUml,concDEX:s.concDEX,concDEXml:s.concDEXml,log:[]}); renderLog(); renderDonuts(); draw(); renderNextBar();}
+function donutSVG({percent,color,bg}){const size=62,stroke=8,r=(size-stroke)/2,c=2*Math.PI*r,p=Math.min(1,Math.max(0,percent)),dash=`${p*c} ${c}`; return `<div class="donut"><svg width="${size}" height="${size}"><circle cx="31" cy="31" r="${r}" stroke="${bg}" stroke-width="${stroke}" fill="none"></circle><circle cx="31" cy="31" r="${r}" stroke="${color}" stroke-width="${stroke}" fill="none" stroke-dasharray="${dash}" stroke-linecap="round"></circle></svg><div class="center">${Math.round(p*100)}%</div></div>`}
+function renderDonuts(){const w=safeNumber(document.getElementById('weight').value,0), wrap=document.getElementById('donutWrap'); wrap.innerHTML=''; if(!w){wrap.innerHTML='<div class="kicker">체중을 입력하세요.</div>'; return;} const {log}=store.get(); const since24=Date.now()-24*3600*1000; const rows=log.filter(x=>Date.parse(x.ts)>=since24); const sums={APAP:0,IBU:0,DEX:0}; rows.forEach(r=>{sums[r.drug]+=r.mg}); const conc=getConcs(); ['APAP','IBU','DEX'].forEach(k=>{const maxMg=w*DRUGS[k].maxDailyMgKgRange[0], used=sums[k], leftMg=Math.max(0,maxMg-used), leftMl=leftMg/(conc[k]||1); const card=document.createElement('div'); card.className='donut-card'; card.innerHTML=`${donutSVG({percent:(used/maxMg),color:DRUGS[k].color,bg:'#eef2f7'})}<div><div class="donut-label">${DRUGS[k].name}</div><div class="donut-sub">오늘 더 먹을 수 있는 양</div><div class="donut-val" style="color:${DRUGS[k].color}">${leftMl.toFixed(1)} ml <span class="donut-sub">(≈ ${Math.round(leftMg)} mg)</span></div></div>`; wrap.appendChild(card);});}
+function renderNextBar(){const bar=document.getElementById('nextBar'), s=store.get(), arr=(s.log||[]).slice().sort((a,b)=>Date.parse(b.ts)-Date.parse(a.ts)); if(arr.length===0){bar.style.display='none'; return;} bar.style.display='flex'; const last=arr[0], lastDrug=last.drug, lastTime=Date.parse(last.ts), now=Date.now(); const fmtHM=ms=>{const m=Math.floor(ms/60000); if(m<60)return `${m}분`; const h=Math.floor(m/60),r=m%60; return `${h}시간 ${r}분`;}; document.getElementById('nb_last').textContent=fmt(new Date(lastTime)); document.getElementById('nb_elapsed').textContent=fmtHM(now-lastTime); const rule={APAP:{APAP:4,IBUDEX:2},IBU:{APAP:2,IBUDEX:6},DEX:{APAP:2,IBUDEX:6}}; const r=rule[lastDrug]; const label=hours=>{const allow=lastTime+hours*3600*1000; return now>=allow?'지금':fmt(new Date(allow));}; document.getElementById('nb_apap').textContent=label(r.APAP); document.getElementById('nb_ibudex').textContent=label(r.IBUDEX);}
+function pkConcentrationSeries(drugKey,t0,t1,stepMin){
+  const s=store.get(), doses=(s.log||[]).filter(x=>x.drug===drugKey), weight=safeNumber(s.weight,0)||safeNumber(document.getElementById('weight').value,0), d=DRUGS[drugKey];
+  const Ke=Math.log(2)/d.tHalf, Ka=d.Ka, Vd_mL=d.VdLkg*weight*1000, pts=[];
+  for(let t=t0;t<=t1;t+=stepMin*60000){
+    let C=0;
+    for(const dose of doses){
+      const dt=(t-Date.parse(dose.ts))/3600000;
+      if(dt>0 && Vd_mL>0 && Math.abs(Ka-Ke)>1e-9){
+        const dose_ug=dose.mg*1000;
+        C += ((d.F*dose_ug)/Vd_mL)*(Ka/(Ka-Ke))*(Math.exp(-Ke*dt)-Math.exp(-Ka*dt));
+      }
+    }
+    pts.push({t,C:Math.max(0,C)});
+  }
+  return pts;
+}
+function interpolateAt(series,t){if(!series.length)return 0; if(t<=series[0].t)return series[0].C; if(t>=series[series.length-1].t)return series[series.length-1].C; for(let i=1;i<series.length;i++){if(series[i].t>=t){const a=series[i-1],b=series[i],r=(t-a.t)/(b.t-a.t); return a.C+(b.C-a.C)*r;}} return 0;}
+function draw(){
+  const canvas=document.getElementById('chart'), ctx=canvas.getContext('2d'); const W=canvas.clientWidth||360,H=canvas.clientHeight||240; canvas.width=W; canvas.height=H; ctx.clearRect(0,0,W,H);
+  const windowH=parseInt(document.getElementById('windowH').value,10), start=centerTs-(windowH/2)*3600*1000, end=centerTs+(windowH/2)*3600*1000;
+  const SA=pkConcentrationSeries('APAP',start,end,6), SI=pkConcentrationSeries('IBU',start,end,6), SD=pkConcentrationSeries('DEX',start,end,6);
+  let yMax=1; [...SA,...SI,...SD].forEach(p=>{if(p.C>yMax)yMax=p.C}); const therapy=DRUGS[graphDrug].therapy; yMax=Math.max(yMax*1.15, therapy[1]*1.35, 10); yMax=Math.ceil(yMax/5)*5;
+  const padL=52,padR=14,padT=8,padB=28, xPos=t=>padL+(W-padL-padR)*((t-start)/(end-start)), yPos=c=>padT+(H-padT-padB)*(1-(c/yMax));
+  ctx.strokeStyle='#e5e7eb'; ctx.beginPath(); for(let i=0;i<=6;i++){const x=xPos(start+(end-start)*i/6); ctx.moveTo(x,padT); ctx.lineTo(x,H-padB);} for(let j=0;j<=4;j++){const y=padT+(H-padT-padB)*j/4; ctx.moveTo(padL,y); ctx.lineTo(W-padR,y);} ctx.stroke();
+  ctx.fillStyle='rgba(14,165,233,0.12)'; ctx.fillRect(padL,yPos(therapy[1]),W-padL-padR,yPos(therapy[0])-yPos(therapy[1]));
+  ctx.fillStyle='#64748b'; ctx.font='11px sans-serif'; [...new Set([0,Math.round(yMax/3),Math.round(2*yMax/3),Math.round(yMax)])].forEach(v=>ctx.fillText(String(v),8,yPos(v)+4));
+  const mode=document.getElementById('viewMode').value;
+  const drawLine=(arr,color,label,idx)=>{ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();arr.forEach((p,i)=>{const x=xPos(p.t),y=yPos(p.C); if(i===0)ctx.moveTo(x,y); else ctx.lineTo(x,y);});ctx.stroke();ctx.fillStyle=color;ctx.fillRect(W-150,34+16*idx,10,10);ctx.fillStyle='#0f172a';ctx.fillText(label,W-135,42+16*idx);};
+  if(mode==='overlay'){drawLine(SA,'#ff5a7a','아세트아미노펜',0);drawLine(SI,'#4f67ff','이부프로펜',1);drawLine(SD,'#10b981','덱시부프로펜',2);}
+  else {const N=SA.map((p,i)=>({t:p.t,C:p.C+(SI[i]?.C||0)+(SD[i]?.C||0)})); drawLine(N,'#111827','합산 농도',0);}
+  const now=Date.now(); if(now>=start&&now<=end){const x=xPos(now); ctx.strokeStyle='rgba(2,6,23,0.25)'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x,padT); ctx.lineTo(x,H-padB); ctx.stroke();}
+  ctx.fillStyle='#0f172a'; ctx.font='11px sans-serif'; for(let i=0;i<=6;i++){const t=new Date(start+(end-start)*i/6); ctx.fillText(`${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`, xPos(t.getTime())-14, H-8);}
+  renderSummary(interpolateAt(graphDrug==='APAP'?SA:graphDrug==='IBU'?SI:SD, now));
+}
+function renderSummary(currentConc){
+  const el=document.getElementById('summaryCard'); const [lo,hi]=DRUGS[graphDrug].therapy;
+  let state='bad', label='낮음'; if(currentConc>=lo&&currentConc<=hi){state='good';label='적정';} else if(currentConc>hi){state='warn';label='높음';}
+  const d=new Date(), hh=String(d.getHours()).padStart(2,'0'), mm=String(d.getMinutes()).padStart(2,'0');
+  el.style.display='flex'; el.className=`summary ${state}`;
+  el.innerHTML=`<span class="badge ${state}">${label}</span><div><div><span class="title">현재 농도</span><b>${currentConc.toFixed(1)} μg/mL</b> · ${hh}:${mm}</div><div class="kicker">${DRUGS[graphDrug].name} 기준 치료권 ${lo}~${hi} μg/mL</div></div>`;
+}
+function pan(h){centerTs+=h*3600*1000;draw()} function nowCenter(){centerTs=Date.now();draw()}
+window.addEventListener('load', init);
+</script>
+</body>
+</html>
